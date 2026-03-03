@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Dashboard • Phalombe SRMS</title>
+</head>
+
+<body>
+  <header>
+    <div>
+      <img src="../assets/images/government-logo.png" alt="Government logo" />
+      <h1>PHALOMBE SECONDARY SCHOOL</h1>
+      <p>SRMS • Teacher Portal</p>
+    </div>
+
+    <div>
+      <strong>Dashboard</strong> — <span id="teacherName">Teacher Name</span>
+    </div>
+
+    <nav>
+      <a href="../login.html">Sign out</a>
+    </nav>
+  </header>
+
+  <hr />
+
+  <div id="dashboard-container">
+    <aside id="side_bar">
+      <nav>
+        <h2>Menu</h2>
+        <ul>
+          <li><a href="#" id="nav-dashboard">Dashboard</a></li>
+          <li><a href="#" id="nav-classes">My Classes</a></li>
+          <li><a href="#" id="nav-attendance">Log Attendance</a></li>
+          <li><a href="#" id="nav-exams">Exam Center</a></li>
+          <li><a href="#" id="nav-discipline">Discipline</a></li>
+          <li><a href="#" id="nav-reports">Reports</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <hr />
+
+    <main id="main-section">
+      
+      <section id="content-dashboard">
+        <h2>Welcome, <span id="teacher-name-display">Teacher Name</span></h2>
+        <p>Here’s what’s happening with your classes today.</p>
+        
+        <div class="stats-overview">
+          <div>Today's Classes: <span id="count-classes">0</span></div>
+          <div>Pending Tasks: <span id="count-tasks">0</span></div>
+        </div>
+
+        <div class="quick-actions">
+          <h3>Quick Actions</h3>
+          <button type="button">Take Attendance</button>
+          <button type="button">Enter Grades</button>
+          <button type="button">Record Discipline</button>
+        </div>
+      </section>
+
+      <section id="content-classes" style="display:none;">
+        <h3>My Classes</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th>Students</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="classes-table-body">
+            <tr>
+              <td>Form 2A</td>
+              <td>45</td>
+              <td><a href="#">View</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="content-attendance" style="display:none;">
+        <h3>Attendance Panel</h3>
+        <form>
+          <label for="class-select">Select Class:</label>
+          <select id="class-select">
+            <option value="">--Select Class--</option>
+            <option value="f2a">Form 2A</option>
+          </select>
+          <button type="submit">Load Register</button>
+        </form>
+      </section>
+
+      <section id="content-exams" style="display:none;">
+        <h3>Exam Center</h3>
+        <div>
+          <label for="exam-class-select">Class:</label>
+          <select id="exam-class-select">
+            <option value="">--Select--</option>
+          </select>
+          
+          <label for="exam-subject-select">Subject:</label>
+          <select id="exam-subject-select">
+            <option value="">--Select--</option>
+          </select>
+        </div>
+        
+        <div id="upload-results">
+          <h4>Upload Exam Results</h4>
+          <input type="file" id="results-file" />
+        </div>
+      </section>
+
+      <section id="content-discipline" style="display:none;">
+        <h3>Discipline Tracking</h3>
+        <p>Record and view student disciplinary incidents.</p>
+        <button type="button">Add New Record</button>
+      </section>
+
+      <section id="content-reports" style="display:none;">
+        <h3>Reports Gallery</h3>
+        <ul>
+          <li><a href="#">Termly Student Performance</a></li>
+          <li><a href="#">Class Attendance Summary</a></li>
+        </ul>
+      </section>
+
+    </main>
+  </div>
+
+  <hr />
+
+  <footer>
+    <small>© 2026 Phalombe SRMS</small>
+  </footer>
+
+</body>
+</html>

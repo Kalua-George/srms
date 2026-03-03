@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>HOD Dashboard • Phalombe SRMS</title>
+</head>
+
+<body>
+  <header>
+    <div>
+      <img src="../assets/images/government-logo.png" alt="Government logo" />
+      <h1>PHALOMBE SECONDARY SCHOOL</h1>
+      <p>SRMS • HOD Portal (<span id="departmentName">Science Department</span>)</p>
+    </div>
+
+    <div>
+      <strong>HOD Dashboard</strong> —
+      <span id="teacherName">HOD Name</span>
+    </div>
+
+    <div>
+      <a href="../login.html">Sign out</a>
+    </div>
+  </header>
+
+  <main>
+    <aside id="side_bar"> 
+      <nav>
+        <h2>Menu</h2>
+        <ul>
+          <li><a href="#dashboard-content">Dashboard</a></li>
+          <li><a href="#class-list">My Classes</a></li>
+          <li><a href="#attendance-panel">Log Attendance</a></li>
+          
+          <li><a href="#dept-teachers-panel">Department Teachers</a></li>
+          <li><a href="#exam-management-panel">Department Exam Center</a></li>
+          <li><a href="#dept-performance-panel">Academic Performance</a></li>
+          <li><a href="#discipline-panel">Discipline Oversight</a></li>
+          <li><a href="#reports-panel">Department Reports</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <section id="main-section">
+      
+      <section id="dashboard-content">
+        <h2>Welcome, <span id="teacher-name-2">HOD Name</span></h2>
+        <p>Departmental management and academic oversight overview[cite: 9].</p>
+        
+        <section id="quick-actions">
+          <h3>HOD Quick Actions</h3>
+          <ul>
+            <li><a href="#exam-management-panel">Create End-of-Term Exam</a></li>
+            <li><a href="#dept-teachers-panel">Assign Teacher to Subject</a></li>
+            <li><a href="#attendance-panel">Check Teacher Attendance</a></li>
+          </ul>
+        </section>
+      </section>
+
+      <section id="dept-teachers-panel" style="display: none;">
+        <h3>Department Teachers</h3>
+        <p>Managing teachers within the <span id="dept-label">Science</span> department[cite: 1].</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Teacher Name</th>
+              <th>Assigned Subjects</th>
+              <th>Assigned Classes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="dept-teachers-table">
+            <tr>
+              <td>Example Teacher</td>
+              <td>Biology, Chemistry</td>
+              <td>Form 2A, Form 4B</td>
+              <td><button>Manage Assignments</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="exam-management-panel" style="display: none;">
+        <h3>Department Exam Center</h3>
+        <p>Authority to create and review End-of-Term examinations for department subjects[cite: 2].</p>
+        
+        <div id="create-exam-form">
+          <h4>Create End-of-Term Exam</h4>
+          <label for="exam-subject-select">Subject (Department Only):</label>
+          <select id="exam-subject-select">
+            <option value="">--Select Subject--</option>
+            </select>
+          <button type="button">Generate Exam Entry</button>
+        </div>
+
+        <div id="exam-list">
+          <h4>Review Results & Performance</h4>
+          <p>(List of departmental exams will appear here) [cite: 2]</p>
+        </div>
+      </section>
+
+      <section id="dept-performance-panel" style="display: none;">
+        <h3>Academic Performance</h3>
+        <p>Monitoring grade distributions and pass/fail rates per subject.</p>
+        <div id="performance-stats">
+          <div>Subject Trends</div>
+          <div>Class Comparisons</div>
+        </div>
+      </section>
+
+      <section id="discipline-panel" style="display: none;">
+        <h3>Discipline Oversight</h3>
+        <p>Monitoring incidents involving department teachers and classes[cite: 5].</p>
+        <div id="discipline-logs">
+          <p>(Recent departmental incidents will appear here)</p>
+        </div>
+      </section>
+
+      <section id="class-list" style="display: none;">
+        <h3>My Personal Classes</h3>
+        <p>(Your assigned classes will appear here)</p>
+      </section>
+
+      <section id="attendance-panel" style="display: none;">
+        <h3>Attendance</h3>
+        <p>Log attendance for your specific classes.</p>
+      </section>
+
+      <section id="reports-panel" style="display: none;">
+        <h3>Department Reports</h3>
+        <p>Access department-wide academic reports.</p>
+      </section>
+
+    </section>
+  </main>
+
+  <footer>
+    <small>© 2026 Phalombe SRMS • HOD Access Level [cite: 12]</small>
+  </footer>
+
+</body>
+<script type="module" src="../assets/js/teacher/teacher.js"></script>
+</html>
