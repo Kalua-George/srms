@@ -43,66 +43,39 @@
       <nav class="sidebar-nav">
         <h2>Menu</h2>
         <ul>
-          <li><a class="nav-link active" href="./dashboard.html">Dashboard</a></li>
-          <li><a class="nav-link" href="./myclasses.html">My Classes</a></li>
-          <li><a class="nav-link" href="./attendance.html">Log Attendance</a></li>
-          <li><a class="nav-link" href="./exams.html">Exam Center</a></li>
-          <li><a class="nav-link" href="./discipline.html">Discipline</a></li>
-          <li><a class="nav-link" href="./reports.html">Reports</a></li>
+          <li><a class="nav-link active" href="#dashboard" id="dashboard-link">Dashboard</a></li>
+          <li><a class="nav-link" href="#classes" id="classes-link">My Classes</a></li>
+          <li><a class="nav-link" href="#attendance" id="attendance-link">Log Attendance</a></li>
+          <li><a class="nav-link" href="#exams" id="exams-link">Exam Center</a></li>
+          <li><a class="nav-link" href="#discipline" id="discipline-link">Discipline</a></li>
+          <li><a class="nav-link" href="#reports" id="reports-link">Reports</a></li>
         </ul>
       </nav>
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content" id="main-section">
-      <!-- Welcome -->
-      <section class="welcome-section" id="dashboard-content">
-        <h2>Welcome, <span id="teacher-name-2">Teacher Name</span></h2>
+      <main id="main-section">
+      
+      <section id="dashboard">
+        <h2>Welcome, <span id="teacher-name-display">Teacher Name</span></h2>
         <p>Here’s what’s happening with your classes today.</p>
-      </section>
+        
+        <div class="stats-overview">
+          <div>Today's Classes: <span id="count-classes">0</span></div>
+          <div>Pending Tasks: <span id="count-tasks">0</span></div>
+        </div>
 
-      <!-- Quick Actions -->
-      <section class="quick-actions" id="quick-actions">
-        <h3>Quick Actions</h3>
-        <div class="action-buttons">
-          <a class="action-btn" href="./attendance.html">Take Attendance</a>
-          <a class="action-btn" href="./exams.html">Enter Grades</a>
-          <a class="action-btn" href="./discipline.html">Record Discipline</a>
+        <div class="quick-actions">
+          <h3>Quick Actions</h3>
+          <button type="button">Take Attendance</button>
+          <button type="button">Enter Grades</button>
+          <button type="button">Record Discipline</button>
         </div>
       </section>
 
-      <!-- Dashboard Cards (optional widgets) -->
-      <section class="dashboard-cards">
-        <div class="card">
-          <div class="card-header">Today’s Classes</div>
-          <div class="card-content">
-            <div class="card-number" id="todays-classes-count">0</div>
-            <p class="card-label">Scheduled today</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">Pending Tasks</div>
-          <div class="card-content">
-            <div class="card-number" id="pending-tasks-count">0</div>
-            <p class="card-label">Need attention</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">My Classes</div>
-          <div class="card-content">
-            <div class="card-number" id="my-classes-count">0</div>
-            <p class="card-label">Assigned</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Classes Section -->
-      <section class="classes-section" id="class-list">
+      <section id="classes">
         <h3>My Classes</h3>
-
-        <table class="table">
+        <table>
           <thead>
             <tr>
               <th>Class</th>
@@ -110,22 +83,69 @@
               <th>Actions</th>
             </tr>
           </thead>
-
           <tbody id="classes-table-body">
-            <!-- Placeholder row -->
-            <tr>
-              <td>Form 2A</td>
-              <td>--</td>
-              <td>
-                <a class="link" href="./attendance.html">Attendance</a>
-                &nbsp;|&nbsp;
-                <a class="link" href="./exams.html">Grades</a>
-              </td>
-            </tr>
+            
           </tbody>
         </table>
       </section>
+
+      <section id="attendance">
+        <h3>Attendance Panel</h3>
+        <form>
+          <label for="class-select">Select Class:</label>
+          <select id="class-select">
+            <option value="">--Select Class--</option>
+            <option value="f2a">Form 2A</option>
+          </select>
+          <button type="submit">Load Register</button>
+        </form>
+      </section>
+
+      <section id="content-exams">
+        <h3>Exam Center</h3>
+        <div>
+          <label for="exam-class-select">Class:</label>
+          <select id="exam-class-select">
+            <option value="">--Select--</option>
+          </select>
+          
+          <label for="exam-subject-select">Subject:</label>
+          <select id="exam-subject-select">
+            <option value="">--Select--</option>
+          </select>
+        </div>
+        
+        <div id="upload-results">
+          <h4>Upload Exam Results</h4>
+          <input type="file" id="results-file" />
+        </div>
+      </section>
+
+      <section id="discipline">
+        <h3>Discipline Tracking</h3>
+        <p>Record and view student disciplinary incidents.</p>
+        <button type="button">Add New Record</button>
+      </section>
+
+      <section id="reports">
+        <h3>Reports Gallery</h3>
+        <ul>
+          <li><a href="#">Termly Student Performance</a></li>
+          <li><a href="#">Class Attendance Summary</a></li>
+        </ul>
+      </section>
+
     </main>
+    <div class="modals">
+      <div class="classmodal">
+
+      </div>
+      <div class="attendanceModal"></div>
+      <div class="examModal"></div>
+      <div class="disciplineModal"></div>
+
+
+    </div>
   </div>
 
   <!-- Footer -->
