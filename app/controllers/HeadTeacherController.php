@@ -5,6 +5,34 @@ require_once __DIR__ . '/../models/Exam.php';
 
 class HeadTeacherController extends BaseController
 {
+    private function loadPendingAssignmentRequest(int $requestId): ?array
+    {
+        $pdo = $this->pdo();
+        $stmt = $pdo->prepare(
+            "SELECT *
+             FROM teacher_assignment_requests
+             WHERE id = :id AND status = 'pending'
+             LIMIT 1"
+        );
+        $stmt->execute([':id' => $requestId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    private function applyApprovedAssignment(array $request): bool
+    {
+        $teacherId = (int)$request['teacher_id'];
+        $targetId = (int)$request['target_id'];
+        $type = (string)$request['assignment_type'];
+
+        $m = new Teacher($this->userId(), $this->yearId(), $this->termId());
+        $m->id = $teacherId;
+
+        if ($type === 'class') return $m->assignClass($targetId);
+        if ($type === 'subject') return $m->assignSubject($targetId);
+        return false;
+    }
+
     // =========================
     // GET /api/head/dashboard
     // head_teacher only
@@ -35,9 +63,9 @@ class HeadTeacherController extends BaseController
 
         // Latest exams
         $stmt = $pdo->query("
-            SELECT id, name, exam_type, exam_date
+            SELECT id, name, exam_type, start_date, end_date
             FROM exams
-            ORDER BY exam_date DESC
+            ORDER BY end_date DESC, start_date DESC
             LIMIT 5
         ");
         $latestExams = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -149,51 +177,134 @@ class HeadTeacherController extends BaseController
     }
 
     // =========================
-    // ASSIGNMENTS (head_teacher allowed)
+    // ASSIGNMENTS (head_teacher approval)
     // =========================
 
-    // POST /api/head/assign-class  body: teacher_id, class_id
+    // POST /app/head/assign-class
+    // Deprecated direct path; only HOD can create requests.
     public function assignClass(): void
     {
         $this->requireRole(['head_teacher']);
-
-        $data = $this->request();
-        $teacherId = (int)($data['teacher_id'] ?? 0);
-        $classId   = (int)($data['class_id'] ?? 0);
-
-        if ($teacherId <= 0 || $classId <= 0) {
-            $this->json(['ok' => false, 'error' => 'teacher_id and class_id are required'], 400);
-        }
-
-        $m = new Teacher($this->userId(), $this->yearId(), $this->termId());
-        $m->id = $teacherId;
-
-        if ($m->assignClass($classId)) {
-            $this->json(['ok' => true]);
-        }
-        $this->json(['ok' => false, 'error' => 'Failed to assign class'], 500);
+        $this->json(['ok' => false, 'error' => 'Direct assignment disabled. Use assignment request approval endpoint.'], 403);
     }
 
-    // POST /api/head/assign-subject  body: teacher_id, subject_id
+    // POST /app/head/assign-subject
+    // Deprecated direct path; only HOD can create requests.
     public function assignSubject(): void
+    {
+        $this->requireRole(['head_teacher']);
+        $this->json(['ok' => false, 'error' => 'Direct assignment disabled. Use assignment request approval endpoint.'], 403);
+    }
+
+    // GET /app/head/assignment-requests?status=pending
+    public function assignmentRequests(): void
+    {
+        $this->requireRole(['head_teacher']);
+
+        $status = trim((string)($_GET['status'] ?? 'pending'));
+        $allowedStatuses = ['pending', 'approved', 'rejected'];
+        if (!in_array($status, $allowedStatuses, true)) {
+            $this->json(['ok' => false, 'error' => 'Invalid status'], 400);
+        }
+
+        $pdo = $this->pdo();
+        $stmt = $pdo->prepare(
+            "SELECT r.id, r.teacher_id, r.assignment_type, r.target_id, r.status,
+                    r.requested_by, r.approved_by, r.decision_note,
+                    r.created_at, r.approved_at,
+                    t.firstname, t.lastname,
+                    req.firstname AS requested_by_firstname,
+                    req.lastname AS requested_by_lastname,
+                    appr.firstname AS approved_by_firstname,
+                    appr.lastname AS approved_by_lastname
+             FROM teacher_assignment_requests r
+             JOIN teachers t ON t.id = r.teacher_id
+             JOIN teachers req ON req.id = r.requested_by
+             LEFT JOIN teachers appr ON appr.id = r.approved_by
+             WHERE r.status = :status
+             ORDER BY r.created_at DESC"
+        );
+        $stmt->execute([':status' => $status]);
+
+        $this->json(['ok' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    }
+
+    // POST /app/head/assignment-requests/approve
+    // body: request_id, decision_note(optional)
+    public function approveAssignmentRequest(): void
     {
         $this->requireRole(['head_teacher']);
 
         $data = $this->request();
-        $teacherId = (int)($data['teacher_id'] ?? 0);
-        $subjectId = (int)($data['subject_id'] ?? 0);
-
-        if ($teacherId <= 0 || $subjectId <= 0) {
-            $this->json(['ok' => false, 'error' => 'teacher_id and subject_id are required'], 400);
+        $requestId = (int)($data['request_id'] ?? 0);
+        $note = trim((string)($data['decision_note'] ?? ''));
+        if ($requestId <= 0) {
+            $this->json(['ok' => false, 'error' => 'request_id is required'], 400);
         }
 
-        $m = new Teacher($this->userId(), $this->yearId(), $this->termId());
-        $m->id = $teacherId;
-
-        if ($m->assignSubject($subjectId)) {
-            $this->json(['ok' => true]);
+        $request = $this->loadPendingAssignmentRequest($requestId);
+        if (!$request) {
+            $this->json(['ok' => false, 'error' => 'Pending request not found'], 404);
         }
-        $this->json(['ok' => false, 'error' => 'Failed to assign subject'], 500);
+
+        if (!$this->applyApprovedAssignment($request)) {
+            $this->json(['ok' => false, 'error' => 'Failed to apply assignment during approval'], 500);
+        }
+
+        $pdo = $this->pdo();
+        $stmt = $pdo->prepare(
+            "UPDATE teacher_assignment_requests
+             SET status = 'approved', approved_by = :approved_by, approved_at = NOW(), decision_note = :decision_note
+             WHERE id = :id AND status = 'pending'"
+        );
+        $ok = $stmt->execute([
+            ':approved_by' => $this->userId(),
+            ':decision_note' => ($note !== '' ? $note : null),
+            ':id' => $requestId,
+        ]);
+
+        if ($ok && $stmt->rowCount() > 0) {
+            $this->json(['ok' => true, 'status' => 'approved']);
+        }
+
+        $this->json(['ok' => false, 'error' => 'Failed to mark request approved'], 500);
+    }
+
+    // POST /app/head/assignment-requests/reject
+    // body: request_id, decision_note(optional)
+    public function rejectAssignmentRequest(): void
+    {
+        $this->requireRole(['head_teacher']);
+
+        $data = $this->request();
+        $requestId = (int)($data['request_id'] ?? 0);
+        $note = trim((string)($data['decision_note'] ?? ''));
+        if ($requestId <= 0) {
+            $this->json(['ok' => false, 'error' => 'request_id is required'], 400);
+        }
+
+        $request = $this->loadPendingAssignmentRequest($requestId);
+        if (!$request) {
+            $this->json(['ok' => false, 'error' => 'Pending request not found'], 404);
+        }
+
+        $pdo = $this->pdo();
+        $stmt = $pdo->prepare(
+            "UPDATE teacher_assignment_requests
+             SET status = 'rejected', approved_by = :approved_by, approved_at = NOW(), decision_note = :decision_note
+             WHERE id = :id AND status = 'pending'"
+        );
+        $ok = $stmt->execute([
+            ':approved_by' => $this->userId(),
+            ':decision_note' => ($note !== '' ? $note : null),
+            ':id' => $requestId,
+        ]);
+
+        if ($ok && $stmt->rowCount() > 0) {
+            $this->json(['ok' => true, 'status' => 'rejected']);
+        }
+
+        $this->json(['ok' => false, 'error' => 'Failed to reject request'], 500);
     }
 
     // =========================
@@ -280,15 +391,15 @@ class HeadTeacherController extends BaseController
 
         $pdo = $this->pdo();
         $stmt = $pdo->query("
-            SELECT id, name, exam_type, exam_date, academic_year_id, term_id
+            SELECT id, name, exam_type, start_date, end_date, academic_year_id, term_id
             FROM exams
-            ORDER BY exam_date DESC
+            ORDER BY end_date DESC, start_date DESC
         ");
         $this->json(['ok' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
     }
 
     // POST /api/head/exams/create
-    // body: name, exam_type, exam_date, subject_ids[]
+    // body: name, exam_type, start_date, end_date, subject_ids[]
     public function createExam(): void
     {
         $this->requireRole(['head_teacher']);
@@ -297,11 +408,16 @@ class HeadTeacherController extends BaseController
 
         $name = trim((string)($data['name'] ?? ''));
         $type = (string)($data['exam_type'] ?? '');
-        $date = trim((string)($data['exam_date'] ?? ''));
+        $startDate = trim((string)($data['start_date'] ?? ''));
+        $endDate = trim((string)($data['end_date'] ?? ''));
+        $legacyDate = trim((string)($data['exam_date'] ?? ''));
+
+        if ($startDate === '' && $legacyDate !== '') $startDate = $legacyDate;
+        if ($endDate === '' && $legacyDate !== '') $endDate = $legacyDate;
         $subjectIds = $data['subject_ids'] ?? [];
 
-        if ($name === '' || $type === '' || $date === '') {
-            $this->json(['ok' => false, 'error' => 'name, exam_type, exam_date are required'], 400);
+        if ($name === '' || $type === '' || $startDate === '' || $endDate === '') {
+            $this->json(['ok' => false, 'error' => 'name, exam_type, start_date and end_date are required'], 400);
         }
 
         if (!is_array($subjectIds)) $subjectIds = [];
@@ -309,7 +425,8 @@ class HeadTeacherController extends BaseController
         $m = new exam($this->userId(), $this->yearId(), $this->termId());
         $m->name = $name;
         $m->exam_type = $type;
-        $m->exam_date = $date;
+        $m->start_date = $startDate;
+        $m->end_date = $endDate;
 
         if ($m->create($subjectIds)) {
             $this->json(['ok' => true, 'id' => (int)$m->id]);

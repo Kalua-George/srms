@@ -163,7 +163,7 @@ class Student extends BaseModel {
                                           WHERE g.student_id = :student_id
                                           AND g.academic_year_id = :academic_year_id
                                           AND g.term_id = :term_id
-                                          ORDER BY e.exam_date DESC");
+                                          ORDER BY e.end_date DESC, e.start_date DESC");
             $stmt->bindParam(':student_id', $this->id, PDO::PARAM_INT);
             $stmt->bindParam(':academic_year_id', $this->academic_year_id);
             $stmt->bindParam(':term_id', $this->term_id);

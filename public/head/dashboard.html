@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Head Teacher Dashboard • Phalombe SRMS</title>
+    <link rel="stylesheet" href="../assets/css/headteacher.css" />
+</head>
+<body>
+
+    <header>
+        <div>
+            <img src="../assets/media/images/malawi.png" alt="Government logo" width="56" height="56" />
+            <div>
+                <h1>PHALOMBE SECONDARY SCHOOL</h1>
+                <p>SRMS • Head Teacher Portal</p>
+            </div>
+        </div>
+
+        <div>
+            <strong>Head Teacher Dashboard</strong>
+            <p>Welcome, <span id="teacherName">Head Teacher Name</span></p>
+            <span id="teacher-name-2" style="display:none;">Head Teacher Name</span>
+            <span id="teacher-name-display" style="display:none;">Head Teacher Name</span>
+        </div>
+
+        <div>
+            <a href="../login.html">Sign out</a>
+        </div>
+    </header>
+    <main>
+        <aside id="side_bar">
+            <nav>
+                <h2>Menu</h2>
+                <ul>
+                    <li><a href="#dashboard-overview" id="dashboard-link">Dashboard</a></li>
+                    <li><a href="#classes-panel" id="classes-link">My Classes</a></li>
+                    <li><a href="#attendance-panel" id="attendance-link">Log Attendance</a></li>
+                    <li><a href="#exams-panel" id="exams-link">Exam Center</a></li>
+                    <li><a href="#discipline-panel" id="discipline-link">Discipline</a></li>
+                    <li><a href="#allocation-approvals-panel" id="approval-link">Allocation Approvals</a></li>
+                    <li><a href="#reports-panel" id="reports-link">Reports</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <section id="main-section">
+            <section id="dashboard-overview">
+                <h2>School-Wide Overview</h2>
+                <p>Head Teacher role: perform normal teaching duties and approve class and subject allocation requests.</p>
+
+                <section id="summary-cards">
+                    <h3>Summary Cards</h3>
+                    <div>
+                        <article>
+                            <h4>Pending Allocation Requests</h4>
+                            <p id="count-pending-requests">0</p>
+                        </article>
+                        <article>
+                            <h4>Approved Today</h4>
+                            <p id="count-approved-today">0</p>
+                        </article>
+                        <article>
+                            <h4>Rejected Today</h4>
+                            <p id="count-rejected-today">0</p>
+                        </article>
+                        <article>
+                            <h4>My Classes Today</h4>
+                            <p id="count-my-classes">0</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section id="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <ul>
+                        <li><a href="#attendance-panel">Take Attendance</a></li>
+                        <li><a href="#exams-panel">Enter Exam Results</a></li>
+                        <li><a href="#discipline-panel">Record Discipline Incident</a></li>
+                        <li><a href="#allocation-approvals-panel">Review Pending Requests</a></li>
+                        <li><a href="#allocation-approvals-panel">Approve Subject Allocation</a></li>
+                        <li><a href="#allocation-approvals-panel">Approve Class Allocation</a></li>
+                    </ul>
+                </section>
+            </section>
+
+            <section id="classes-panel">
+                <h3>My Classes</h3>
+                <p>Classes assigned to you for teaching activities.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Form</th>
+                            <th>Subject</th>
+                            <th>Students</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="my-classes-table-body">
+                        <tr>
+                            <td colspan="5">No assigned classes found.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="attendance-panel">
+                <h3>Attendance Panel</h3>
+                <p>Mark daily attendance for your assigned classes.</p>
+
+                <form id="attendance-form">
+                    <label for="attendance-class-select">Select Class</label>
+                    <select id="attendance-class-select" name="class_id">
+                        <option value="">-- Select Class --</option>
+                    </select>
+
+                    <label for="attendance-date-input">Date</label>
+                    <input type="date" id="attendance-date-input" name="attendance_date" />
+
+                    <button type="button" id="load-register-btn">Load Register</button>
+                    <button type="button" id="save-attendance-btn">Save Attendance</button>
+                </form>
+
+                <div id="attendance-register-container">
+                    <p>No register loaded.</p>
+                </div>
+            </section>
+
+            <section id="exams-panel">
+                <h3>Exam Center</h3>
+                <p>Submit marks for classes and subjects assigned to you.</p>
+
+                <form id="teacher-exam-form">
+                    <label for="exam-class-select">Class</label>
+                    <select id="exam-class-select" name="class_id">
+                        <option value="">-- Select Class --</option>
+                    </select>
+
+                    <label for="exam-subject-select">Subject</label>
+                    <select id="exam-subject-select" name="subject_id">
+                        <option value="">-- Select Subject --</option>
+                    </select>
+
+                    <label for="exam-score-input">Score</label>
+                    <input type="number" id="exam-score-input" name="score" min="0" max="100" placeholder="0 - 100" />
+
+                    <button type="button" id="submit-score-btn">Submit Score</button>
+                </form>
+            </section>
+
+            <section id="discipline-panel">
+                <h3>Discipline Tracking</h3>
+                <p>Record and review discipline incidents from your classes.</p>
+
+                <form id="discipline-form">
+                    <label for="discipline-student-input">Student</label>
+                    <input type="text" id="discipline-student-input" name="student_name" placeholder="Student name" />
+
+                    <label for="discipline-class-select">Class</label>
+                    <select id="discipline-class-select" name="class_id">
+                        <option value="">-- Select Class --</option>
+                    </select>
+
+                    <label for="discipline-incident-input">Incident</label>
+                    <textarea id="discipline-incident-input" name="incident" rows="3" placeholder="Describe incident"></textarea>
+
+                    <button type="button" id="save-discipline-btn">Save Record</button>
+                </form>
+            </section>
+
+            <section id="allocation-approvals-panel">
+                <h3>Allocation Approval Center</h3>
+                <p>Approve or reject requests submitted by HODs and teachers for class and subject allocations.</p>
+
+                <article>
+                    <h4>Subject Allocation Requests</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Requested By</th>
+                                <th>Teacher</th>
+                                <th>Subject</th>
+                                <th>Class</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subject-allocation-requests-body">
+                            <tr>
+                                <td colspan="7">No pending subject allocation requests.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+
+                <article>
+                    <h4>Class Allocation Requests</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Requested By</th>
+                                <th>Teacher</th>
+                                <th>Class</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="class-allocation-requests-body">
+                            <tr>
+                                <td colspan="7">No pending class allocation requests.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+
+                <section id="approval-actions">
+                    <h4>Selected Request Action</h4>
+                    <label for="request-id-input">Request ID</label>
+                    <input type="text" id="request-id-input" name="request_id" placeholder="Enter request ID" />
+
+                    <label for="approval-note-input">Comment (Optional)</label>
+                    <textarea id="approval-note-input" name="approval_note" rows="3" placeholder="Add approval or rejection comment"></textarea>
+
+                    <div>
+                        <button type="button" id="approve-request-btn">Approve</button>
+                        <button type="button" id="reject-request-btn">Reject</button>
+                    </div>
+                </section>
+            </section>
+
+            <section id="reports-panel">
+                <h3>Approval Reports</h3>
+                <p>Track approval volumes and status of allocation decisions.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Subject Requests</th>
+                            <th>Class Requests</th>
+                            <th>Approved</th>
+                            <th>Rejected</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="approval-report-table-body"></tbody>
+                </table>
+
+                <div>
+                    <article>
+                        <h4>Overall Approval Rate</h4>
+                        <p id="overall-approval-rate">0%</p>
+                    </article>
+
+                    <article>
+                        <h4>Pending Requests Older Than 3 Days</h4>
+                        <p id="stale-pending-requests">0</p>
+                    </article>
+
+                    <article>
+                        <h4>Notes</h4>
+                        <ul>
+                            <li>Head Teacher can perform normal teacher responsibilities.</li>
+                            <li>Head Teacher can additionally approve class and subject allocations.</li>
+                        </ul>
+                    </article>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <footer>
+        <small>© 2026 Phalombe SRMS • Head Teacher Access Level</small>
+    </footer>
+    <script type="module" src="../assets/js/headTeacher/headteacher.js"></script>
+</body>
+</html>

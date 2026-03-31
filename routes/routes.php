@@ -32,6 +32,7 @@ $ROUTES = [
         '/app/hod/teachers' => [HODController::class, 'teachers'],
         '/app/hod/teacher-classes' => [HODController::class, 'teacherClasses'],
         '/app/hod/teacher-subjects' => [HODController::class, 'teacherSubjects'],
+        '/app/hod/assignment-requests' => [HODController::class, 'assignmentRequests'],
 
         // ---- Head Teacher ----
         '/app/head/dashboard' => [HeadTeacherController::class, 'dashboard'],
@@ -41,6 +42,7 @@ $ROUTES = [
         '/app/head/subjects' => [HeadTeacherController::class, 'subjects'],
         '/app/head/exams' => [HeadTeacherController::class, 'exams'],
         '/app/head/exams/subjects' => [HeadTeacherController::class, 'examSubjects'],
+        '/app/head/assignment-requests' => [HeadTeacherController::class, 'assignmentRequests'],
 
         // ---- Exams (general) ----
         '/app/exams' => [ExamController::class, 'index'],
@@ -86,6 +88,8 @@ $ROUTES = [
         '/app/head/teachers/delete' => [HeadTeacherController::class, 'deleteTeacher'],
         '/app/head/assign-class' => [HeadTeacherController::class, 'assignClass'],
         '/app/head/assign-subject' => [HeadTeacherController::class, 'assignSubject'],
+        '/app/head/assignment-requests/approve' => [HeadTeacherController::class, 'approveAssignmentRequest'],
+        '/app/head/assignment-requests/reject' => [HeadTeacherController::class, 'rejectAssignmentRequest'],
         '/app/head/classes/create' => [HeadTeacherController::class, 'createClass'],
         '/app/head/exams/create' => [HeadTeacherController::class, 'createExam'],
 

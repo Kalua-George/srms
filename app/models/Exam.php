@@ -9,15 +9,21 @@ class Exam extends BaseModel {
     public $id;
     public $name;
     public $exam_type;   // CA, Midterm, EndTerm
-    public $exam_date;   // YYYY-MM-DD
+    public $start_date;  // YYYY-MM-DD
+    public $end_date;    // YYYY-MM-DD
 
     public function __construct($user_id = null, $academic_year_id = null, $term_id = null) {
         parent::__construct($user_id, $academic_year_id, $term_id);
     }
 
+    private function isValidDate(string $value): bool {
+        $d = DateTime::createFromFormat('Y-m-d', $value);
+        return $d && $d->format('Y-m-d') === $value;
+    }
+
     private function validate() {
-        if (empty($this->name) || empty($this->exam_type) || empty($this->exam_date)) {
-            throw new Exception("name, exam_type and exam_date are required.");
+        if (empty($this->name) || empty($this->exam_type) || empty($this->start_date) || empty($this->end_date)) {
+            throw new Exception("name, exam_type, start_date and end_date are required.");
         }
 
         $allowedTypes = ['CA', 'Midterm', 'EndTerm'];
@@ -25,9 +31,16 @@ class Exam extends BaseModel {
             throw new Exception("Invalid exam_type. Allowed: CA, Midterm, EndTerm.");
         }
 
-        $d = DateTime::createFromFormat('Y-m-d', (string)$this->exam_date);
-        if (!$d || $d->format('Y-m-d') !== $this->exam_date) {
-            throw new Exception("Invalid exam_date. Use YYYY-MM-DD.");
+        if (!$this->isValidDate((string)$this->start_date)) {
+            throw new Exception("Invalid start_date. Use YYYY-MM-DD.");
+        }
+
+        if (!$this->isValidDate((string)$this->end_date)) {
+            throw new Exception("Invalid end_date. Use YYYY-MM-DD.");
+        }
+
+        if ((string)$this->end_date < (string)$this->start_date) {
+            throw new Exception("end_date cannot be earlier than start_date.");
         }
 
         if (empty($this->academic_year_id) || empty($this->term_id)) {
@@ -41,12 +54,13 @@ class Exam extends BaseModel {
             $this->validate();
 
             $query = "INSERT INTO {$this->table}
-                      (name, exam_type, exam_date, academic_year_id, term_id)
-                      VALUES (:name, :exam_type, :exam_date, :academic_year_id, :term_id)";
+                      (name, exam_type, start_date, end_date, academic_year_id, term_id)
+                      VALUES (:name, :exam_type, :start_date, :end_date, :academic_year_id, :term_id)";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':name', $this->name);
             $stmt->bindParam(':exam_type', $this->exam_type);
-            $stmt->bindParam(':exam_date', $this->exam_date);
+            $stmt->bindParam(':start_date', $this->start_date);
+            $stmt->bindParam(':end_date', $this->end_date);
             $stmt->bindParam(':academic_year_id', $this->academic_year_id, PDO::PARAM_INT);
             $stmt->bindParam(':term_id', $this->term_id, PDO::PARAM_INT);
 
@@ -86,7 +100,7 @@ class Exam extends BaseModel {
             if ($filterByTermYear) {
                 $query .= " WHERE academic_year_id = :academic_year_id AND term_id = :term_id";
             }
-            $query .= " ORDER BY exam_date DESC";
+            $query .= " ORDER BY end_date DESC, start_date DESC";
 
             $stmt = $this->conn->prepare($query);
 

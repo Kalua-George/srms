@@ -59,7 +59,7 @@ class ExamController extends BaseController
     // =========================================================
     // POST /api/exams/create
     // head_teacher only
-    // body: name, exam_type, exam_date, subject_ids[]
+    // body: name, exam_type, start_date, end_date, subject_ids[]
     // =========================================================
     public function create(): void
     {
@@ -69,11 +69,16 @@ class ExamController extends BaseController
 
         $name = trim((string)($data['name'] ?? ''));
         $type = (string)($data['exam_type'] ?? '');
-        $date = trim((string)($data['exam_date'] ?? ''));
+        $startDate = trim((string)($data['start_date'] ?? ''));
+        $endDate = trim((string)($data['end_date'] ?? ''));
+        $legacyDate = trim((string)($data['exam_date'] ?? ''));
+
+        if ($startDate === '' && $legacyDate !== '') $startDate = $legacyDate;
+        if ($endDate === '' && $legacyDate !== '') $endDate = $legacyDate;
         $subjectIds = $data['subject_ids'] ?? [];
 
-        if ($name === '' || $type === '' || $date === '') {
-            $this->json(['ok' => false, 'error' => 'name, exam_type, exam_date are required'], 400);
+        if ($name === '' || $type === '' || $startDate === '' || $endDate === '') {
+            $this->json(['ok' => false, 'error' => 'name, exam_type, start_date and end_date are required'], 400);
         }
 
         if (!is_array($subjectIds)) $subjectIds = [];
@@ -84,7 +89,8 @@ class ExamController extends BaseController
         $m = new Exam($this->userId(), $this->yearId(), $this->termId());
         $m->name = $name;
         $m->exam_type = $type;
-        $m->exam_date = $date;
+        $m->start_date = $startDate;
+        $m->end_date = $endDate;
 
         if ($m->create($subjectIds)) {
             $this->json(['ok' => true, 'id' => (int)$m->id]);

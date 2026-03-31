@@ -113,7 +113,7 @@ class DisciplinaryController extends BaseController
         }
 
         // head_teacher: allow any, but if they pass reported_by, ensure it's valid-ish
-        // (we'll just keep it as provided or self)
+        // (i'll just keep it as provided or self)
 
         $pdo = $this->pdo();
 

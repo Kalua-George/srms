@@ -119,7 +119,7 @@ class Grade extends BaseModel {
                 $query .= " AND g.academic_year_id = :academic_year_id AND g.term_id = :term_id";
             }
 
-            $query .= " ORDER BY e.exam_date DESC";
+            $query .= " ORDER BY e.end_date DESC, e.start_date DESC";
 
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':student_id', $student_id, PDO::PARAM_INT);

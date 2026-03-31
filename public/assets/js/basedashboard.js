@@ -1,63 +1,86 @@
-// public/assets/js/teacher/teacher.js
-import { apiFetch, setText } from "../api.js";
+// public/assets/js/basedashboard.js
+// Reusable dashboard bootstrap shared by role-specific dashboard modules.
+import { apiFetch, setText } from "../js/api.js";
 
-function baseApi(pathFromPublicRoot) {
-  // This page is /public/teacher/dashboard.html
-  // API endpoints are /public/app/...
-  // So use ../app/... relative paths
-  return `../${pathFromPublicRoot.replace(/^\//, "")}`;
-}
+export function createBaseDashboard(config = {}) {
+  const settings = {
+    loginPath: "../login.html",
+    mePath: "app/auth/me",
+    logoutPath: "app/auth/logout",
+    logoutSelector: 'a[href="../login.html"]',
+    nameTargets: ["teacherName", "teacher-name-2", "teacher-name-display"],
+    fallbackName: "User",
+    onReady: null,
+    ...config,
+  };
 
-async function loadMe() {
-  const { res, data } = await apiFetch(baseApi("app/auth/me"));
-
-  if (!res.ok || !data?.ok) {
-    // Session missing/expired → back to login
-    window.location.href = "../login.html";
-    return null;
+  function baseApi(pathFromPublicRoot) {
+    return `../${String(pathFromPublicRoot || "").replace(/^\//, "")}`;
   }
-  return data;
-}
 
-function wireLogout() {
-  // Your current HTML uses a link. We'll hijack it and do POST.
-  const logoutLink = document.querySelector('a[href="../login.html"]');
-  if (!logoutLink) return;
+  async function loadMe() {
+    const { res, data } = await apiFetch(baseApi(settings.mePath));
 
-  logoutLink.addEventListener("click", async (e) => {
-    e.preventDefault();
-
-    try {
-      await apiFetch(baseApi("app/auth/logout"), { method: "POST" });
-    } finally {
-      window.location.href = "../login.html";
+    if (!res.ok || !data?.ok) {
+      window.location.href = settings.loginPath;
+      return null;
     }
-  });
+
+    return data;
+  }
+
+  async function logout() {
+    try {
+      await apiFetch(baseApi(settings.logoutPath), { method: "POST" });
+    } finally {
+      window.location.href = settings.loginPath;
+    }
+  }
+
+  function wireLogout() {
+    const logoutLink = document.querySelector(settings.logoutSelector);
+    if (!logoutLink) return;
+
+    logoutLink.addEventListener("click", async (event) => {
+      event.preventDefault();
+      await logout();
+    });
+  }
+
+  function fillUserName(me) {
+    const name = me?.user?.name || settings.fallbackName;
+    settings.nameTargets.forEach((targetId) => setText(targetId, name));
+    return name;
+  }
+
+  function persistContext(me) {
+    localStorage.setItem("srms_user", JSON.stringify(me?.user || null));
+    localStorage.setItem("srms_context", JSON.stringify(me?.context || null));
+  }
+
+  async function init() {
+    wireLogout();
+
+    const me = await loadMe();
+    if (!me) return;
+
+    fillUserName(me);
+    persistContext(me);
+
+    if (typeof settings.onReady === "function") {
+      await settings.onReady(me, {
+        api: baseApi,
+        logout,
+        fillUserName,
+      });
+    }
+  }
+
+  return {
+    init,
+    api: baseApi,
+    loadMe,
+    logout,
+    fillUserName,
+  };
 }
-
-function fillTeacherName(me) {
-  const name = me?.user?.name || "Teacher";
-
-  // Your HTML uses teacherName and teacher-name-2
-  setText("teacherName", name);
-  setText("teacher-name-2", name);
-}
-
-async function init() {
-  wireLogout();
-
-  const me = await loadMe();
-  if (!me) return;
-
-  fillTeacherName(me);
-
-  // Optional: you can also store it for quick access elsewhere
-  localStorage.setItem("srms_user", JSON.stringify(me.user || null));
-  localStorage.setItem("srms_context", JSON.stringify(me.context || null));
-
-  // Later: load classes, exams, timetable, etc.
-  // For now we just prove auth + rendering works.
-  //also remember to add the switchinng between sections
-}
-
-document.addEventListener("DOMContentLoaded", init);

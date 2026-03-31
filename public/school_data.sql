@@ -135,7 +135,8 @@ CREATE TABLE `exams` (
   `term_id` int(11) DEFAULT NULL,
   `name` varchar(100) NOT NULL,
   `exam_type` enum('CA','Midterm','EndTerm') NOT NULL,
-  `exam_date` date NOT NULL
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -278,6 +279,28 @@ CREATE TABLE `teacher_classes` (
 CREATE TABLE `teacher_subjects` (
   `teacher_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `teacher_assignment_requests`
+--
+
+CREATE TABLE `teacher_assignment_requests` (
+  `id` int(11) NOT NULL,
+  `teacher_id` int(11) NOT NULL,
+  `assignment_type` enum('class','subject') NOT NULL,
+  `target_id` int(11) NOT NULL,
+  `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  `requested_by` int(11) NOT NULL,
+  `requested_by_department_id` int(11) DEFAULT NULL,
+  `approved_by` int(11) DEFAULT NULL,
+  `decision_note` varchar(255) DEFAULT NULL,
+  `approved_at` datetime DEFAULT NULL,
+  `academic_year_id` int(11) DEFAULT NULL,
+  `term_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -450,6 +473,19 @@ ALTER TABLE `teacher_subjects`
   ADD KEY `subject_id` (`subject_id`);
 
 --
+-- Indexes for table `teacher_assignment_requests`
+--
+ALTER TABLE `teacher_assignment_requests`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tar_teacher` (`teacher_id`),
+  ADD KEY `idx_tar_status` (`status`),
+  ADD KEY `idx_tar_requested_by` (`requested_by`),
+  ADD KEY `idx_tar_approved_by` (`approved_by`),
+  ADD KEY `idx_tar_requested_dept` (`requested_by_department_id`),
+  ADD KEY `idx_tar_year_term` (`academic_year_id`,`term_id`),
+  ADD KEY `idx_tar_type_target` (`assignment_type`,`target_id`);
+
+--
 -- Indexes for table `terms`
 --
 ALTER TABLE `terms`
@@ -548,6 +584,12 @@ ALTER TABLE `subjects`
 -- AUTO_INCREMENT for table `teachers`
 --
 ALTER TABLE `teachers`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `teacher_assignment_requests`
+--
+ALTER TABLE `teacher_assignment_requests`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -660,6 +702,17 @@ ALTER TABLE `teacher_classes`
 ALTER TABLE `teacher_subjects`
   ADD CONSTRAINT `teacher_subjects_ibfk_1` FOREIGN KEY (`teacher_id`) REFERENCES `teachers` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `teacher_subjects_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `teacher_assignment_requests`
+--
+ALTER TABLE `teacher_assignment_requests`
+  ADD CONSTRAINT `tar_ibfk_1` FOREIGN KEY (`teacher_id`) REFERENCES `teachers` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `tar_ibfk_2` FOREIGN KEY (`requested_by`) REFERENCES `teachers` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `tar_ibfk_3` FOREIGN KEY (`approved_by`) REFERENCES `teachers` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `tar_ibfk_4` FOREIGN KEY (`requested_by_department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `tar_ibfk_5` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tar_ibfk_6` FOREIGN KEY (`term_id`) REFERENCES `terms` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `terms`

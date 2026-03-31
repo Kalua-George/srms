@@ -1,74 +1,61 @@
-import "../basedashboard.js";
+import { createBaseDashboard } from "../basedashboard.js";
 
+function setupPanelSwitching() {
+  const panels = {
+    dashboard: document.getElementById("dashboard-content"),
+    classes: document.getElementById("class-list"),
+    attendance: document.getElementById("attendance-panel"),
+    teachers: document.getElementById("dept-teachers-panel"),
+    exams: document.getElementById("exam-management-panel"),
+    performance: document.getElementById("dept-performance-panel"),
+    discipline: document.getElementById("discipline-panel"),
+    reports: document.getElementById("reports-panel"),
+  };
 
-const  departmentsPanel = document.getElementById('departments=teacher-panel');
-const examsPanel = document.getElementById('exams-management-panel');
-const performancePanel = document.getElementById('dept-performance-panel');
-const disciplinePanel = document.getElementById('discipline-panel');
-const classListPanel = document.getElementById('class-list');
-const  attendancePanel = document.getElementById('attendance-panel');
-const reportsPanel = document.getElementById('reports-panel');
-const dashboardPanel = document.getElementById('dashboard-content');
+  const linkToPanel = {
+    "dashboard-link": "dashboard",
+    "class-list-link": "classes",
+    "attendance-panel-link": "attendance",
+    "dept-teachers-panel-link": "teachers",
+    "exam-management-panel-link": "exams",
+    "dept-performance-panel-link": "performance",
+    "discipline-panel-link": "discipline",
+    "reports-panel-link": "reports",
+  };
 
-// this is etting the side panels
+  function showPanel(panelKey) {
+    Object.values(panels).forEach((panel) => {
+      if (panel) panel.style.display = "none";
+    });
 
-const dashboardLink = document.getElementById('dashboard-content');
-const classListLink = document.getElementById('class-list-link');
-const attendanceLink = document.getElementById('attendance-panel-link');
-const deptTeachersLink = document.getElementById('dept-teachers-panel-link');
-const examManagementLink = document.getElementById('exam-management-panel-link');
-const deptPerformanceLink = document.getElementById('dept-performance-panel-link');
-const disciplineLink = document.getElementById('discipline-panel-link');
-const reportsLink = document.getElementById('reports-panel-link');
+    const selectedPanel = panels[panelKey];
+    if (selectedPanel) selectedPanel.style.display = "block";
+  }
 
-dashboardLink.addEventListener('click', () => {
-  showPanel(dashboardPanel);
+  Object.keys(linkToPanel).forEach((linkId) => {
+    const link = document.getElementById(linkId);
+    if (!link) return;
+
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      showPanel(linkToPanel[linkId]);
+    });
+  });
+
+  showPanel("dashboard");
+}
+
+const dashboard = createBaseDashboard({
+  fallbackName: "HOD",
+  nameTargets: ["teacherName", "teacher-name-2"],
+  onReady: async () => {
+    setupPanelSwitching();
+  },
 });
 
-classListLink.addEventListener('click', () => {
-  showPanel(classListPanel);
+document.addEventListener("DOMContentLoaded", () => {
+  dashboard.init();
 });
-
-attendanceLink.addEventListener('click', () => {
-  showPanel(attendancePanel);
-});
-
-deptTeachersLink.addEventListener('click', () => {
-  showPanel(departmentsPanel);
-});
-
-examManagementLink.addEventListener('click', () => {
-  showPanel(examsPanel);
-});
-
-deptPerformanceLink.addEventListener('click', () => {
-  showPanel(performancePanel);
-});
-
-disciplineLink.addEventListener('click', () => {
-  showPanel(disciplinePanel);
-});
-
-reportsLink.addEventListener('click', () => {
-  showPanel(reportsPanel);
-});
-
-function showPanel(panel) {
-  // Hide all panels
-  const panels = [dashboardPanel, classListPanel, attendancePanel, departmentsPanel, examsPanel, performancePanel, disciplinePanel, reportsPanel];
-  panels.forEach(p => p.style.display = 'none');
-
-
-
-  // Show the selected panel
-  panel.style.display = 'block';
-}   
-
-//............. ending of the shuffling  of modals and panels......................
-
-
-
-// core functions of the hod dashboard, like loading user info, handling logout, etc. can be similar to teacher.js, but with different API endpoints and rendering logic as needed.
 
 
 
