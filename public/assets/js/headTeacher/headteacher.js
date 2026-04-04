@@ -478,8 +478,8 @@ function renderApprovalTables() {
         <td>${escapeHtml(r.created_at || "-")}</td>
         <td>${escapeHtml(`${r.requested_by_firstname || ""} ${r.requested_by_lastname || ""}`.trim())}</td>
         <td>${escapeHtml(`${r.firstname || ""} ${r.lastname || ""}`.trim())}</td>
-        <td>${escapeHtml(r.assignment_type || "-")}</td>
-        <td>${escapeHtml(r.target_id || "-")}</td>
+        <td>${escapeHtml(r.class_name || (r.class_id ? `Class #${r.class_id}` : "-"))}</td>
+        <td>${escapeHtml(r.subject_name || (r.subject_id ? `Subject #${r.subject_id}` : "-"))}</td>
         <td>
           <button class="btn-sm approve-btn" data-id="${r.id}">Approve</button>
           <button class="btn-sm danger reject-btn" data-id="${r.id}">Reject</button>
@@ -506,7 +506,8 @@ function renderApprovalTables() {
       <tr>
         <td>${d.id}</td>
         <td>${escapeHtml(`${d.firstname || ""} ${d.lastname || ""}`.trim())}</td>
-        <td>${escapeHtml(d.assignment_type || "-")}</td>
+        <td>${escapeHtml(d.class_name || (d.class_id ? `Class #${d.class_id}` : "-"))}</td>
+        <td>${escapeHtml(d.subject_name || (d.subject_id ? `Subject #${d.subject_id}` : "-"))}</td>
         <td>${escapeHtml(d.status || "-")}</td>
         <td>${escapeHtml(d.decision_note || "-")}</td>
       </tr>

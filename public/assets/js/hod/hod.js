@@ -485,8 +485,8 @@ async function loadAssignmentRequests(skipRender = false) {
       <tr>
         <td>${r.id}</td>
         <td>${escapeHtml(`${r.firstname || ""} ${r.lastname || ""}`.trim())}</td>
-        <td>${escapeHtml(r.assignment_type || "-")}</td>
-        <td>${escapeHtml(r.target_id || "-")}</td>
+        <td>${escapeHtml(r.class_name || (r.class_id ? `Class #${r.class_id}` : "-"))}</td>
+        <td>${escapeHtml(r.subject_name || (r.subject_id ? `Subject #${r.subject_id}` : "-"))}</td>
         <td>${escapeHtml(r.status || "-")}</td>
         <td>${escapeHtml(r.decision_note || "-")}</td>
       </tr>
@@ -534,7 +534,7 @@ async function submitAssignmentRequest() {
     class_id: classId,
     subject_id: subjectId,
   });
-  showNotification("Class and subject assignment requests submitted", "success");
+  showNotification("Combined class and subject assignment request submitted", "success");
 
   closeAssignmentModal();
   await loadAssignmentRequests();

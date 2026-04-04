@@ -5,8 +5,35 @@ require_once __DIR__ . '/../models/Exam.php';
 
 class HeadTeacherController extends BaseController
 {
+    private function ensureAssignmentRequestSchema(): void
+    {
+        try {
+            $pdo = $this->pdo();
+
+            $hasClassId = $pdo->query("SHOW COLUMNS FROM teacher_assignment_requests LIKE 'class_id'")->fetch(PDO::FETCH_ASSOC);
+            if (!$hasClassId) {
+                $pdo->exec("ALTER TABLE teacher_assignment_requests ADD COLUMN class_id INT(11) NULL AFTER target_id");
+            }
+
+            $hasSubjectId = $pdo->query("SHOW COLUMNS FROM teacher_assignment_requests LIKE 'subject_id'")->fetch(PDO::FETCH_ASSOC);
+            if (!$hasSubjectId) {
+                $pdo->exec("ALTER TABLE teacher_assignment_requests ADD COLUMN subject_id INT(11) NULL AFTER class_id");
+            }
+
+            $assignmentTypeCol = $pdo->query("SHOW COLUMNS FROM teacher_assignment_requests LIKE 'assignment_type'")->fetch(PDO::FETCH_ASSOC);
+            $currentType = strtolower((string)($assignmentTypeCol['Type'] ?? ''));
+            if ($currentType !== '' && strpos($currentType, "'both'") === false) {
+                $pdo->exec("ALTER TABLE teacher_assignment_requests MODIFY assignment_type ENUM('class','subject','both') NOT NULL");
+            }
+        } catch (PDOException $e) {
+            error_log('HeadTeacher ensureAssignmentRequestSchema Error: ' . $e->getMessage());
+        }
+    }
+
     private function loadPendingAssignmentRequest(int $requestId): ?array
     {
+        $this->ensureAssignmentRequestSchema();
+
         $pdo = $this->pdo();
         $stmt = $pdo->prepare(
             "SELECT *
@@ -24,12 +51,25 @@ class HeadTeacherController extends BaseController
         $teacherId = (int)$request['teacher_id'];
         $targetId = (int)$request['target_id'];
         $type = (string)$request['assignment_type'];
+        $classId = isset($request['class_id']) ? (int)$request['class_id'] : 0;
+        $subjectId = isset($request['subject_id']) ? (int)$request['subject_id'] : 0;
 
         $m = new Teacher($this->userId(), $this->yearId(), $this->termId());
         $m->id = $teacherId;
 
         if ($type === 'class') return $m->assignClass($targetId);
         if ($type === 'subject') return $m->assignSubject($targetId);
+
+        if ($type === 'both') {
+            $resolvedClassId = $classId > 0 ? $classId : $targetId;
+            if ($resolvedClassId <= 0 || $subjectId <= 0) return false;
+
+            $okClass = $m->assignClass($resolvedClassId);
+            if (!$okClass) return false;
+
+            return $m->assignSubject($subjectId);
+        }
+
         return false;
     }
 
@@ -200,6 +240,7 @@ class HeadTeacherController extends BaseController
     public function assignmentRequests(): void
     {
         $this->requireRole(['head_teacher']);
+        $this->ensureAssignmentRequestSchema();
 
         $status = trim((string)($_GET['status'] ?? 'pending'));
         $allowedStatuses = ['pending', 'approved', 'rejected'];
@@ -209,7 +250,12 @@ class HeadTeacherController extends BaseController
 
         $pdo = $this->pdo();
         $stmt = $pdo->prepare(
-            "SELECT r.id, r.teacher_id, r.assignment_type, r.target_id, r.status,
+            "SELECT r.id, r.teacher_id, r.assignment_type, r.target_id,
+                COALESCE(r.class_id, CASE WHEN r.assignment_type IN ('class', 'both') THEN r.target_id ELSE NULL END) AS class_id,
+                COALESCE(r.subject_id, CASE WHEN r.assignment_type = 'subject' THEN r.target_id ELSE NULL END) AS subject_id,
+                c.name AS class_name,
+                s.name AS subject_name,
+                r.status,
                     r.requested_by, r.approved_by, r.decision_note,
                     r.created_at, r.approved_at,
                     t.firstname, t.lastname,
@@ -220,6 +266,8 @@ class HeadTeacherController extends BaseController
              FROM teacher_assignment_requests r
              JOIN teachers t ON t.id = r.teacher_id
              JOIN teachers req ON req.id = r.requested_by
+             LEFT JOIN classes c ON c.id = COALESCE(r.class_id, CASE WHEN r.assignment_type IN ('class', 'both') THEN r.target_id ELSE NULL END)
+             LEFT JOIN subjects s ON s.id = COALESCE(r.subject_id, CASE WHEN r.assignment_type = 'subject' THEN r.target_id ELSE NULL END)
              LEFT JOIN teachers appr ON appr.id = r.approved_by
              WHERE r.status = :status
              ORDER BY r.created_at DESC"

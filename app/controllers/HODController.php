@@ -4,6 +4,31 @@ require_once __DIR__ . '/../models/Teacher.php';
 
 class HODController extends BaseController
 {
+    private function ensureAssignmentRequestSchema(): void
+    {
+        try {
+            $pdo = $this->pdo();
+
+            $hasClassId = $pdo->query("SHOW COLUMNS FROM teacher_assignment_requests LIKE 'class_id'")->fetch(PDO::FETCH_ASSOC);
+            if (!$hasClassId) {
+                $pdo->exec("ALTER TABLE teacher_assignment_requests ADD COLUMN class_id INT(11) NULL AFTER target_id");
+            }
+
+            $hasSubjectId = $pdo->query("SHOW COLUMNS FROM teacher_assignment_requests LIKE 'subject_id'")->fetch(PDO::FETCH_ASSOC);
+            if (!$hasSubjectId) {
+                $pdo->exec("ALTER TABLE teacher_assignment_requests ADD COLUMN subject_id INT(11) NULL AFTER class_id");
+            }
+
+            $assignmentTypeCol = $pdo->query("SHOW COLUMNS FROM teacher_assignment_requests LIKE 'assignment_type'")->fetch(PDO::FETCH_ASSOC);
+            $currentType = strtolower((string)($assignmentTypeCol['Type'] ?? ''));
+            if ($currentType !== '' && strpos($currentType, "'both'") === false) {
+                $pdo->exec("ALTER TABLE teacher_assignment_requests MODIFY assignment_type ENUM('class','subject','both') NOT NULL");
+            }
+        } catch (PDOException $e) {
+            error_log('HOD ensureAssignmentRequestSchema Error: ' . $e->getMessage());
+        }
+    }
+
     private function ensureTeacherInMyDepartment(int $teacherId): int
     {
         $pdo = $this->pdo();
@@ -67,6 +92,60 @@ class HODController extends BaseController
 
         } catch (PDOException $e) {
             error_log("HOD createAssignmentRequest Error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function createCombinedAssignmentRequest(int $teacherId, int $classId, int $subjectId): ?int
+    {
+        try {
+            $this->ensureAssignmentRequestSchema();
+            $pdo = $this->pdo();
+
+            $check = $pdo->prepare(
+                "SELECT id
+                 FROM teacher_assignment_requests
+                 WHERE teacher_id = :teacher_id
+                   AND assignment_type = 'both'
+                   AND class_id = :class_id
+                   AND subject_id = :subject_id
+                   AND status = 'pending'
+                 LIMIT 1"
+            );
+            $check->execute([
+                ':teacher_id' => $teacherId,
+                ':class_id' => $classId,
+                ':subject_id' => $subjectId,
+            ]);
+
+            $existingId = $check->fetchColumn();
+            if ($existingId) {
+                return (int)$existingId;
+            }
+
+            $deptId = $this->ensureTeacherInMyDepartment($teacherId);
+
+            $stmt = $pdo->prepare(
+                "INSERT INTO teacher_assignment_requests
+                 (teacher_id, assignment_type, target_id, class_id, subject_id, requested_by, requested_by_department_id, status, academic_year_id, term_id)
+                 VALUES
+                 (:teacher_id, 'both', :target_id, :class_id, :subject_id, :requested_by, :requested_by_department_id, 'pending', :academic_year_id, :term_id)"
+            );
+            $ok = $stmt->execute([
+                ':teacher_id' => $teacherId,
+                ':target_id' => $classId,
+                ':class_id' => $classId,
+                ':subject_id' => $subjectId,
+                ':requested_by' => $this->userId(),
+                ':requested_by_department_id' => $deptId,
+                ':academic_year_id' => $this->yearId(),
+                ':term_id' => $this->termId(),
+            ]);
+
+            if (!$ok) return null;
+            return (int)$pdo->lastInsertId();
+        } catch (PDOException $e) {
+            error_log("HOD createCombinedAssignmentRequest Error: " . $e->getMessage());
             return null;
         }
     }
@@ -317,20 +396,14 @@ class HODController extends BaseController
             $this->json(['ok' => false, 'error' => 'subject_id does not exist'], 400);
         }
 
-        $classRequestId = $this->createAssignmentRequest($teacherId, 'class', $classId);
-        if (!$classRequestId) {
-            $this->json(['ok' => false, 'error' => 'Failed to create class assignment request'], 500);
-        }
-
-        $subjectRequestId = $this->createAssignmentRequest($teacherId, 'subject', $subjectId);
-        if (!$subjectRequestId) {
-            $this->json(['ok' => false, 'error' => 'Failed to create subject assignment request'], 500);
+        $requestId = $this->createCombinedAssignmentRequest($teacherId, $classId, $subjectId);
+        if (!$requestId) {
+            $this->json(['ok' => false, 'error' => 'Failed to create combined assignment request'], 500);
         }
 
         $this->json([
             'ok' => true,
-            'class_request_id' => $classRequestId,
-            'subject_request_id' => $subjectRequestId,
+            'request_id' => $requestId,
             'status' => 'pending_approval'
         ]);
     }
@@ -342,10 +415,16 @@ class HODController extends BaseController
     public function assignmentRequests(): void
     {
         $this->requireRole(['hod']);
+        $this->ensureAssignmentRequestSchema();
 
         $pdo = $this->pdo();
         $stmt = $pdo->prepare(
-            "SELECT r.id, r.teacher_id, r.assignment_type, r.target_id, r.status,
+            "SELECT r.id, r.teacher_id, r.assignment_type, r.target_id,
+                    COALESCE(r.class_id, CASE WHEN r.assignment_type IN ('class', 'both') THEN r.target_id ELSE NULL END) AS class_id,
+                    COALESCE(r.subject_id, CASE WHEN r.assignment_type = 'subject' THEN r.target_id ELSE NULL END) AS subject_id,
+                    c.name AS class_name,
+                    s.name AS subject_name,
+                    r.status,
                     r.requested_by, r.approved_by, r.decision_note,
                     r.created_at, r.approved_at,
                     t.firstname, t.lastname,
@@ -353,6 +432,8 @@ class HODController extends BaseController
                     approver.lastname AS approver_lastname
              FROM teacher_assignment_requests r
              JOIN teachers t ON t.id = r.teacher_id
+             LEFT JOIN classes c ON c.id = COALESCE(r.class_id, CASE WHEN r.assignment_type IN ('class', 'both') THEN r.target_id ELSE NULL END)
+             LEFT JOIN subjects s ON s.id = COALESCE(r.subject_id, CASE WHEN r.assignment_type = 'subject' THEN r.target_id ELSE NULL END)
              LEFT JOIN teachers approver ON approver.id = r.approved_by
              WHERE r.requested_by = :hod_id
              ORDER BY r.created_at DESC"
