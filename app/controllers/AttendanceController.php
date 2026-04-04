@@ -3,6 +3,60 @@ require_once __DIR__ . '/BaseController.php';
 
 class AttendanceController extends BaseController
 {
+    // GET /app/attendance/class?class_id=1&date=2026-01-15
+    // Route-compatible alias for byClassAndDate()
+    public function classByDate(): void
+    {
+        $this->byClassAndDate();
+    }
+
+    // GET /app/attendance/summary?class_id=1&date=2026-01-15
+    public function summary(): void
+    {
+        $this->requireAuth();
+
+        $classId = (int)($_GET['class_id'] ?? 0);
+        $date    = trim((string)($_GET['date'] ?? ''));
+
+        if ($classId <= 0 || $date === '') {
+            $this->json(['ok' => false, 'error' => 'class_id and date required'], 400);
+        }
+
+        if ($this->role() === 'teacher' && !$this->teacherHasClass($this->userId(), $classId)) {
+            $this->json(['ok' => false, 'error' => 'Forbidden'], 403);
+        }
+
+        $yearId = $this->yearId();
+        $termId = $this->termId();
+        if ($yearId === null || $termId === null) {
+            $this->json(['ok' => false, 'error' => 'Academic year/term not set in session'], 400);
+        }
+
+        $pdo = $this->pdo();
+        $stmt = $pdo->prepare(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) AS present,
+                SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) AS absent,
+                SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) AS late,
+                SUM(CASE WHEN status = 'excused' THEN 1 ELSE 0 END) AS excused
+             FROM attendance
+             WHERE class_id = :class_id
+               AND attendance_date = :dt
+               AND academic_year_id = :year
+               AND term_id = :term"
+        );
+        $stmt->execute([
+            ':class_id' => $classId,
+            ':dt' => $date,
+            ':year' => $yearId,
+            ':term' => $termId,
+        ]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $this->json(['ok' => true, 'data' => $row]);
+    }
+
     // GET /api/attendance/students?class_id=1
     // returns students in that class (for marking attendance UI)
     public function studentsByClass(): void
@@ -131,6 +185,9 @@ class AttendanceController extends BaseController
 
         $yearId = $this->yearId();
         $termId = $this->termId();
+        if ($yearId === null || $termId === null) {
+            $this->json(['ok' => false, 'error' => 'Academic year/term not set in session'], 400);
+        }
 
         $pdo = $this->pdo();
         $stmt = $pdo->prepare("
@@ -172,6 +229,9 @@ class AttendanceController extends BaseController
 
         $yearId = $this->yearId();
         $termId = $this->termId();
+        if ($yearId === null || $termId === null) {
+            $this->json(['ok' => false, 'error' => 'Academic year/term not set in session'], 400);
+        }
 
         $pdo = $this->pdo();
         $stmt = $pdo->prepare("

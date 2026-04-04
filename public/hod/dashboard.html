@@ -3,144 +3,367 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
- 
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-SnH5WK+bZxgPHs44uWix+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkR4j8R9Qp6Y1fYp4Yx04rR4l4kWf3c7C2gA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
   <link rel="stylesheet" href="../assets/css/hod.css" />
   <title>HOD Dashboard • Phalombe SRMS</title>
 </head>
 
 <body>
-  <header>
-    <div>
-      <img src="../assets/media/images/malawi.png" alt="Government logo" />
-      <h1>PHALOMBE SECONDARY SCHOOL</h1>
-      <p>SRMS • HOD Portal (<span id="departmentName">Science Department</span>)</p>
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-section">
+        <div class="logo-placeholder">
+          <img src="../assets/media/images/malawi.png" alt="Government logo" class="logo-image" />
+        </div>
+        <div>
+          <h1>PHALOMBE SECONDARY SCHOOL</h1>
+          <div class="portal-subtitle">SRMS • HOD Portal (<span id="departmentName">Department</span>)</div>
+        </div>
+      </div>
     </div>
 
-    <div>
-      <strong>HOD Dashboard</strong> —
-      <span id="teacherName">HOD Name</span>
-    </div>
-
-    <div>
-      <a href="../login.html">Sign out</a>
+    <div class="header-right">
+      <button
+        type="button"
+        class="menu-toggle"
+        id="menu-toggle"
+        aria-label="Toggle navigation menu"
+        aria-controls="side_bar"
+        aria-expanded="false"
+      >
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      </button>
+      <div class="user-info">
+        <strong>Dashboard</strong>
+        <div>HOD: <span id="teacherName">HOD Name</span></div>
+      </div>
+      <a class="sign-out-btn" href="../login.html" aria-label="Sign out" title="Sign out">
+        <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+      </a>
     </div>
   </header>
 
+  <div id="sidebar-backdrop" aria-hidden="true"></div>
+
   <main>
-    <aside id="side_bar"> 
+    <aside id="side_bar">
       <nav>
         <h2>Menu</h2>
         <ul>
-          <li><a href="#dashboard-content" id="dashboard-link">Dashboard</a></li>
-          <li><a href="#class-list" id="class-list-link">My Classes</a></li>
-          <li><a href="#attendance-panel" id="attendance-panel-link">Log Attendance</a></li>
-          
-          <li><a href="#dept-teachers-panel" id="dept-teachers-panel-link">Department Teachers</a></li>
-          <li><a href="#exam-management-panel" id="exam-management-panel-link">Department Exam Center</a></li>
-          <li><a href="#dept-performance-panel" id="dept-performance-panel-link">Academic Performance</a></li>
-          <li><a href="#discipline-panel" id="discipline-panel-link">Discipline Oversight</a></li>
-          <li><a href="#reports-panel" id="reports-panel-link">Department Reports</a></li>
+          <li><a href="#dashboard-content" id="dashboard-link" class="nav-link active">Dashboard</a></li>
+          <li><a href="#class-list" id="class-list-link" class="nav-link">My Classes</a></li>
+          <li><a href="#attendance-panel" id="attendance-panel-link" class="nav-link">Attendance Overview</a></li>
+          <li><a href="#dept-teachers-panel" id="dept-teachers-panel-link" class="nav-link">Department Teachers</a></li>
+          <li><a href="#exam-management-panel" id="exam-management-panel-link" class="nav-link">Department Exam Center</a></li>
+          <li><a href="#dept-performance-panel" id="dept-performance-panel-link" class="nav-link">Academic Performance</a></li>
+          <li><a href="#discipline-panel" id="discipline-panel-link" class="nav-link">Discipline Oversight</a></li>
+          <li><a href="#reports-panel" id="reports-panel-link" class="nav-link">Department Reports</a></li>
         </ul>
       </nav>
     </aside>
 
     <section id="main-section">
-      
       <section id="dashboard-content">
-        <h2>Welcome, <span id="teacher-name-2">HOD Name</span></h2>
-        <p>Departmental management and academic oversight overview[cite: 9].</p>
-        
+        <div class="section-header">
+          <h2>Welcome, <span id="teacher-name-2">HOD Name</span></h2>
+          <p>Departmental management and academic oversight overview.</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="label">Department Teachers</div>
+            <div class="value" id="stat-teachers-total">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Teachers With Classes</div>
+            <div class="value" id="stat-teachers-classes">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Teachers With Subjects</div>
+            <div class="value" id="stat-teachers-subjects">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Pending Requests</div>
+            <div class="value" id="stat-pending-requests">0</div>
+          </div>
+        </div>
+
         <section id="quick-actions">
           <h3>HOD Quick Actions</h3>
-          <ul>
-            <li><a href="#exam-management-panel">Create End-of-Term Exam</a></li>
-            <li><a href="#dept-teachers-panel">Assign Teacher to Subject</a></li>
-            <li><a href="#attendance-panel">Check Teacher Attendance</a></li>
-          </ul>
+          <div class="action-row">
+            <button type="button" id="qa-open-exam" class="btn-primary">Create Exam Draft</button>
+            <button type="button" id="qa-open-assignment" class="btn-primary">Request Assignment</button>
+            <button type="button" id="qa-open-reports" class="btn-secondary">Open Reports</button>
+          </div>
         </section>
       </section>
 
       <section id="dept-teachers-panel" style="display: none;">
-        <h3>Department Teachers</h3>
-        <p>Managing teachers within the <span id="dept-label">Science</span> department[cite: 1].</p>
-        <table>
-          <thead>
-            <tr>
-              <th>Teacher Name</th>
-              <th>Assigned Subjects</th>
-              <th>Assigned Classes</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="dept-teachers-table">
-            <tr>
-              <td>Example Teacher</td>
-              <td>Biology, Chemistry</td>
-              <td>Form 2A, Form 4B</td>
-              <td><button>Manage Assignments</button></td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="section-header">
+          <h3>Department Teachers</h3>
+          <p>Manage assignment requests for teachers in <span id="dept-label">Department</span>.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Teacher</th>
+                <th>Role</th>
+                <th>Teacher Code</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="dept-teachers-table"></tbody>
+          </table>
+        </div>
+
+        <div id="no-teachers" class="empty-state" style="display:none;">No department teachers found.</div>
       </section>
 
       <section id="exam-management-panel" style="display: none;">
-        <h3>Department Exam Center</h3>
-        <p>Authority to create and review End-of-Term examinations for department subjects[cite: 2].</p>
-        
-        <div id="create-exam-form">
-          <h4>Create End-of-Term Exam</h4>
-          <label for="exam-subject-select">Subject (Department Only):</label>
-          <select id="exam-subject-select">
-            <option value="">--Select Subject--</option>
-            </select>
-          <button type="button">Generate Exam Entry</button>
+        <div class="section-header">
+          <h3>Department Exam Center</h3>
+          <p>Review available exams and manage department exam planning.</p>
         </div>
 
-        <div id="exam-list">
-          <h4>Review Results & Performance</h4>
-          <p>(List of departmental exams will appear here) [cite: 2]</p>
+        <form id="exam-filter-form" class="inline-form">
+          <div class="form-group">
+            <label for="exam-type-filter">Exam Type</label>
+            <select id="exam-type-filter">
+              <option value="">All Types</option>
+              <option value="quiz">Quiz</option>
+              <option value="midterm">Midterm</option>
+              <option value="endterm">End Term</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn-primary">Apply Filter</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Exam</th>
+                <th>Type</th>
+                <th>Dates</th>
+                <th>Subjects</th>
+              </tr>
+            </thead>
+            <tbody id="exam-table-body"></tbody>
+          </table>
         </div>
+
+        <div id="no-exams" class="empty-state" style="display:none;">No exams found.</div>
       </section>
 
       <section id="dept-performance-panel" style="display: none;">
-        <h3>Academic Performance</h3>
-        <p>Monitoring grade distributions and pass/fail rates per subject.</p>
-        <div id="performance-stats">
-          <div>Subject Trends</div>
-          <div>Class Comparisons</div>
+        <div class="section-header">
+          <h3>Academic Performance</h3>
+          <p>Monitor grade distributions and pass/fail rates for your department scope.</p>
         </div>
+
+        <div class="stats-grid compact">
+          <div class="stat-card">
+            <div class="label">Average Score</div>
+            <div class="value" id="perf-avg">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Pass Rate</div>
+            <div class="value" id="perf-pass-rate">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Fail Rate</div>
+            <div class="value" id="perf-fail-rate">-</div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Subject</th>
+                <th>Score</th>
+                <th>Grade</th>
+              </tr>
+            </thead>
+            <tbody id="performance-table-body"></tbody>
+          </table>
+        </div>
+
+        <div id="no-performance" class="empty-state" style="display:none;">No performance records available.</div>
       </section>
 
       <section id="discipline-panel" style="display: none;">
-        <h3>Discipline Oversight</h3>
-        <p>Monitoring incidents involving department teachers and classes[cite: 5].</p>
-        <div id="discipline-logs">
-          <p>(Recent departmental incidents will appear here)</p>
+        <div class="section-header">
+          <h3>Discipline Oversight</h3>
+          <p>Monitor incidents within your department scope.</p>
         </div>
+
+        <form id="discipline-filter-form" class="inline-form">
+          <div class="form-group">
+            <label for="discipline-from">From</label>
+            <input id="discipline-from" type="date" />
+          </div>
+          <div class="form-group">
+            <label for="discipline-to">To</label>
+            <input id="discipline-to" type="date" />
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn-primary">Filter</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Reported By</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody id="discipline-table-body"></tbody>
+          </table>
+        </div>
+
+        <div id="no-discipline" class="empty-state" style="display:none;">No discipline records found.</div>
       </section>
 
       <section id="class-list" style="display: none;">
-        <h3>My Personal Classes</h3>
-        <p>(Your assigned classes will appear here)</p>
+        <div class="section-header">
+          <h3>My Personal Classes</h3>
+          <p>Classes assigned to you as a teacher.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Form</th>
+              </tr>
+            </thead>
+            <tbody id="my-classes-table"></tbody>
+          </table>
+        </div>
+
+        <div id="no-my-classes" class="empty-state" style="display:none;">No personal classes assigned.</div>
       </section>
 
       <section id="attendance-panel" style="display: none;">
-        <h3>Attendance</h3>
-        <p>Log attendance for your specific classes.</p>
+        <div class="section-header">
+          <h3>Attendance Overview</h3>
+          <p>Review attendance entries by class and date.</p>
+        </div>
+
+        <form id="attendance-view-form" class="inline-form">
+          <div class="form-group">
+            <label for="attendance-class-select">Class</label>
+            <select id="attendance-class-select"></select>
+          </div>
+          <div class="form-group">
+            <label for="attendance-date-select">Date</label>
+            <input id="attendance-date-select" type="date" />
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn-primary">Load Attendance</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="attendance-table-body"></tbody>
+          </table>
+        </div>
+
+        <div id="no-attendance" class="empty-state" style="display:none;">No attendance records found for this selection.</div>
       </section>
 
       <section id="reports-panel" style="display: none;">
-        <h3>Department Reports</h3>
-        <p>Access department-wide academic reports.</p>
-      </section>
+        <div class="section-header">
+          <h3>Department Reports</h3>
+          <p>Assignment workflow and departmental summaries.</p>
+        </div>
 
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Request ID</th>
+                <th>Teacher</th>
+                <th>Type</th>
+                <th>Target ID</th>
+                <th>Status</th>
+                <th>Decision Note</th>
+              </tr>
+            </thead>
+            <tbody id="requests-table-body"></tbody>
+          </table>
+        </div>
+
+        <div id="no-requests" class="empty-state" style="display:none;">No assignment requests yet.</div>
+      </section>
     </section>
   </main>
 
+  <div id="assignment-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Request Assignment Approval</h3>
+        <button type="button" id="assignment-modal-close" class="modal-close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+      </div>
+
+      <form id="assignment-form">
+        <input type="hidden" id="assign-teacher-id" />
+
+        <div class="form-group">
+          <label for="assign-teacher-name">Teacher</label>
+          <input id="assign-teacher-name" type="text" disabled />
+        </div>
+
+        <div class="form-group" id="assign-class-group">
+          <label for="assign-class-id">Class</label>
+          <select id="assign-class-id"></select>
+        </div>
+
+        <div class="form-group" id="assign-subject-group">
+          <label for="assign-subject-id">Subject</label>
+          <select id="assign-subject-id"></select>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Submit Request</button>
+          <button type="button" id="assignment-cancel" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="notification-container"></div>
+
   <footer>
-    <small>© 2026 Phalombe SRMS • HOD Access Level [cite: 12]</small>
+    <small>© 2026 Phalombe SRMS • HOD Access Level</small>
   </footer>
 
+  <script type="module" src="../assets/js/hod/hod.js"></script>
 </body>
-<script type="module" src="../assets/js/hod/hod.js"></script>
 </html>

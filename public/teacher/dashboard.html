@@ -4,8 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Teacher Dashboard • Phalombe SRMS</title>
-
-  <!-- Link your CSS file (save the CSS you pasted as teacher.css) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-SnH5WK+bZxgPHs44uWix+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkR4j8R9Qp6Y1fYp4Yx04rR4l4kWf3c7C2gA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
   <link rel="stylesheet" href="../assets/css/teacher.css" />
 </head>
 
@@ -14,27 +19,36 @@
   <header class="header">
     <div class="header-left">
       <div class="logo-section">
-        <!-- If you want the image instead of emoji box, replace logo-placeholder -->
         <div class="logo-placeholder">
-          <img src="../assets/media/images/malawi.png" alt="Government logo" style="width:100%;height:100%;object-fit:contain;" />
+          <img src="../assets/media/images/malawi.png" alt="Government logo" class="logo-image" />
         </div>
         <div>
           <h1>PHALOMBE SECONDARY SCHOOL</h1>
-          <div style="opacity:.9; font-size:.9rem;">SRMS • Teacher Portal</div>
+          <div class="portal-subtitle">SRMS • Teacher Portal</div>
         </div>
       </div>
     </div>
 
     <div class="header-right">
+      <button
+        type="button"
+        class="menu-toggle"
+        id="menu-toggle"
+        aria-label="Toggle navigation menu"
+        aria-controls="side_bar"
+        aria-expanded="false"
+      >
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      </button>
       <div class="user-info">
         <strong>Dashboard</strong>
         <div>Teacher: <span id="teacherName">Teacher Name</span></div>
       </div>
-
-      <!-- JS will intercept and POST logout; for now link goes to login -->
       <a class="sign-out-btn" href="../login.html">Sign out</a>
     </div>
   </header>
+
+  <div id="sidebar-backdrop" aria-hidden="true"></div>
 
   <!-- Main Container -->
   <div class="container">
@@ -45,6 +59,7 @@
         <ul>
           <li><a class="nav-link active" href="#dashboard" id="dashboard-link">Dashboard</a></li>
           <li><a class="nav-link" href="#classes" id="classes-link">My Classes</a></li>
+          <li><a class="nav-link" href="#grades" id="grades-link">Student Grades</a></li>
           <li><a class="nav-link" href="#attendance" id="attendance-link">Log Attendance</a></li>
           <li><a class="nav-link" href="#exams" id="exams-link">Exam Center</a></li>
           <li><a class="nav-link" href="#discipline" id="discipline-link">Discipline</a></li>
@@ -54,104 +69,358 @@
     </aside>
 
     <!-- Main Content -->
-      <main id="main-section">
+    <main id="main-section">
       
+      <!-- DASHBOARD SECTION -->
       <section id="dashboard">
-        <h2>Welcome, <span id="teacher-name-display">Teacher Name</span></h2>
-        <p>Here’s what’s happening with your classes today.</p>
+        <div class="section-header">
+          <h2>Welcome, <span id="teacher-name-display">Teacher Name</span></h2>
+          <p>Here's what's happening with your classes today.</p>
+        </div>
         
-        <div class="stats-overview">
-          <div>Today's Classes: <span id="count-classes">0</span></div>
-          <div>Pending Tasks: <span id="count-tasks">0</span></div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i></div>
+            <div class="stat-content">
+              <div class="stat-label">My Classes</div>
+              <div class="stat-value" id="count-classes">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+            <div class="stat-content">
+              <div class="stat-label">Students</div>
+              <div class="stat-value" id="count-students">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-list-check" aria-hidden="true"></i></div>
+            <div class="stat-content">
+              <div class="stat-label">Pending Tasks</div>
+              <div class="stat-value" id="count-tasks">0</div>
+            </div>
+          </div>
         </div>
 
         <div class="quick-actions">
           <h3>Quick Actions</h3>
-          <button type="button">Take Attendance</button>
-          <button type="button">Enter Grades</button>
-          <button type="button">Record Discipline</button>
+          <div class="action-buttons">
+            <button type="button" class="btn-action" onclick="window.showModal('attendance-modal')">
+              <i class="fa-solid fa-clipboard-check" aria-hidden="true"></i>
+              Take Attendance
+            </button>
+            <button type="button" class="btn-action" onclick="window.showModal('grade-entry-modal')">
+              <i class="fa-solid fa-square-poll-vertical" aria-hidden="true"></i>
+              Enter Grades
+            </button>
+            <button type="button" class="btn-action" onclick="window.showModal('discipline-modal')">
+              <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+              Record Discipline
+            </button>
+          </div>
         </div>
       </section>
 
-      <section id="classes">
-        <h3>My Classes</h3>
-        <table>
+      <!-- MY CLASSES SECTION -->
+      <section id="classes" style="display: none;">
+        <div class="section-header">
+          <h3>My Classes</h3>
+          <p>Classes you are assigned to teach</p>
+        </div>
+        
+        <div id="classes-loading" class="loading-placeholder">
+          <div class="spinner"></div>
+          <p>Loading classes...</p>
+        </div>
+        
+        <table id="classes-table" class="data-table" style="display: none;">
           <thead>
             <tr>
               <th>Class</th>
+              <th>Form</th>
               <th>Students</th>
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="classes-table-body">
-            
-          </tbody>
+          <tbody id="classes-table-body"></tbody>
         </table>
+
+        <div id="no-classes" class="empty-state" style="display: none;">
+          <p>No classes assigned yet.</p>
+        </div>
       </section>
 
-      <section id="attendance">
-        <h3>Attendance Panel</h3>
-        <form>
-          <label for="class-select">Select Class:</label>
-          <select id="class-select">
-            <option value="">--Select Class--</option>
-            <option value="f2a">Form 2A</option>
-          </select>
-          <button type="submit">Load Register</button>
-        </form>
-      </section>
-
-      <section id="content-exams">
-        <h3>Exam Center</h3>
-        <div>
-          <label for="exam-class-select">Class:</label>
-          <select id="exam-class-select">
-            <option value="">--Select--</option>
-          </select>
-          
-          <label for="exam-subject-select">Subject:</label>
-          <select id="exam-subject-select">
-            <option value="">--Select--</option>
-          </select>
+      <!-- STUDENT GRADES SECTION -->
+      <section id="grades" style="display: none;">
+        <div class="section-header">
+          <h3>Student Grades</h3>
+          <p>Grades for students in your classes and subjects</p>
         </div>
         
-        <div id="upload-results">
-          <h4>Upload Exam Results</h4>
-          <input type="file" id="results-file" />
+        <div class="filter-bar">
+          <select id="grades-class-filter" class="form-control">
+            <option value="">--All Classes--</option>
+          </select>
+        </div>
+
+        <div id="grades-loading" class="loading-placeholder">
+          <div class="spinner"></div>
+          <p>Loading grades...</p>
+        </div>
+
+        <table id="grades-table" class="data-table" style="display: none;">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Class</th>
+              <th>Subject</th>
+              <th>Mark</th>
+              <th>Grade</th>
+            </tr>
+          </thead>
+          <tbody id="grades-table-body"></tbody>
+        </table>
+
+        <div id="no-grades" class="empty-state" style="display: none;">
+          <p>No grades recorded yet.</p>
         </div>
       </section>
 
-      <section id="discipline">
-        <h3>Discipline Tracking</h3>
-        <p>Record and view student disciplinary incidents.</p>
-        <button type="button">Add New Record</button>
+      <!-- ATTENDANCE SECTION -->
+      <section id="attendance" style="display: none;">
+        <div class="section-header">
+          <h3>Log Attendance</h3>
+          <p>Mark student attendance for a class</p>
+        </div>
+        
+        <form id="attendance-quick-form" class="inline-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="attendance-class-select">Select Class:</label>
+              <select id="attendance-class-select" name="class_id" class="form-control" required>
+                <option value="">--Select Class--</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="attendance-date-select">Date:</label>
+              <input type="date" id="attendance-date-select" name="attendance_date" class="form-control" required />
+            </div>
+
+            <button type="submit" class="btn-primary">Load Register</button>
+          </div>
+        </form>
+
+        <div id="attendance-register" class="attendance-register" style="display: none;">
+          <h4>Attendance Register</h4>
+          <div id="attendance-students-list" class="students-checklist"></div>
+          <div class="form-actions">
+            <button type="button" class="btn-success" id="btn-attendance-submit">Submit Attendance</button>
+            <button type="button" class="btn-secondary" id="btn-attendance-cancel">Cancel</button>
+          </div>
+        </div>
       </section>
 
-      <section id="reports">
-        <h3>Reports Gallery</h3>
-        <ul>
-          <li><a href="#">Termly Student Performance</a></li>
-          <li><a href="#">Class Attendance Summary</a></li>
-        </ul>
+      <!-- EXAM CENTER SECTION -->
+      <section id="exams" style="display: none;">
+        <div class="section-header">
+          <h3>Exam Center</h3>
+          <p>Enter grades for exams you've created or are assigned to</p>
+        </div>
+        
+        <form id="exams-filter-form" class="inline-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="exam-class-select">Class:</label>
+              <select id="exam-class-select" name="class_id" class="form-control" required>
+                <option value="">--Select Class--</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="exam-subject-select">Subject:</label>
+              <select id="exam-subject-select" name="subject_id" class="form-control" required>
+                <option value="">--Select Subject--</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn-primary">Load Exams</button>
+          </div>
+        </form>
+
+        <div id="exams-list" class="mt-2" style="display: none;">
+          <h4 class="subsection-title">Available Exams</h4>
+          <div id="exams-list-items"></div>
+        </div>
+      </section>
+
+      <!-- DISCIPLINE SECTION -->
+      <section id="discipline" style="display: none;">
+        <div class="section-header">
+          <h3>Discipline Tracking</h3>
+          <p>Record and view student disciplinary incidents</p>
+        </div>
+        
+        <button type="button" class="btn-primary" onclick="window.showModal('discipline-modal')">
+          + Add New Record
+        </button>
+
+        <div id="discipline-loading" class="loading-placeholder mt-2" style="display: none;">
+          <div class="spinner"></div>
+          <p>Loading records...</p>
+        </div>
+
+        <table id="discipline-table" class="data-table mt-2" style="display: none;">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Class</th>
+              <th>Incident Type</th>
+              <th>Date</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody id="discipline-table-body"></tbody>
+        </table>
+
+        <div id="no-discipline-records" class="empty-state" style="display: none;">
+          <p>No discipline records found.</p>
+        </div>
+      </section>
+
+      <!-- REPORTS SECTION -->
+      <section id="reports" style="display: none;">
+        <div class="section-header">
+          <h3>Reports & Analytics</h3>
+          <p>View detailed reports and statistics</p>
+        </div>
+        
+        <div class="reports-grid">
+          <div class="report-card">
+            <div class="report-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></div>
+            <h4>Attendance Summary</h4>
+            <p>Class attendance statistics by term</p>
+            <button type="button" class="btn-secondary">View Report</button>
+          </div>
+          <div class="report-card">
+            <div class="report-icon"><i class="fa-solid fa-chart-column" aria-hidden="true"></i></div>
+            <h4>Class Performance</h4>
+            <p>Student performance trends and grades</p>
+            <button type="button" class="btn-secondary">View Report</button>
+          </div>
+          <div class="report-card">
+            <div class="report-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></div>
+            <h4>Discipline Summary</h4>
+            <p>Incident trends and patterns</p>
+            <button type="button" class="btn-secondary">View Report</button>
+          </div>
+        </div>
       </section>
 
     </main>
-    <div class="modals">
-      <div class="classmodal">
+  </div>
 
+  <!-- MODALS -->
+  <div id="modals-container">
+    <!-- Attendance Modal -->
+    <div id="attendance-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Mark Attendance</h3>
+          <button type="button" class="modal-close" onclick="window.closeModal('attendance-modal')"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        </div>
+        <form id="attendance-form" class="modal-form">
+          <div class="form-group">
+            <label for="modal-attendance-class">Class: <span class="required">*</span></label>
+            <select id="modal-attendance-class" name="class_id" class="form-control" required>
+              <option value="">--Select Class--</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="modal-attendance-date">Date: <span class="required">*</span></label>
+            <input type="date" id="modal-attendance-date" name="attendance_date" class="form-control" required />
+          </div>
+
+          <div id="modal-attendance-students" class="students-checklist"></div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-success">Save Attendance</button>
+            <button type="button" class="btn-secondary" onclick="window.closeModal('attendance-modal')">Cancel</button>
+          </div>
+        </form>
       </div>
-      <div class="attendanceModal"></div>
-      <div class="examModal"></div>
-      <div class="disciplineModal"></div>
+    </div>
 
+    <!-- Grade Entry Modal -->
+    <div id="grade-entry-modal" class="modal">
+      <div class="modal-content modal-lg">
+        <div class="modal-header">
+          <h3>Enter Exam Grades</h3>
+          <button type="button" class="modal-close" onclick="window.closeModal('grade-entry-modal')"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        </div>
+        <form id="grade-entry-form" class="modal-form">
+          <div class="form-group">
+            <label for="modal-grade-exam">Select Exam: <span class="required">*</span></label>
+            <select id="modal-grade-exam" name="exam_id" class="form-control" required>
+              <option value="">--Select Exam--</option>
+            </select>
+          </div>
 
+          <div class="grade-entry-table"></div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-success">Save Grades</button>
+            <button type="button" class="btn-secondary" onclick="window.closeModal('grade-entry-modal')">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Discipline Modal -->
+    <div id="discipline-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Record Discipline Incident</h3>
+          <button type="button" class="modal-close" onclick="window.closeModal('discipline-modal')"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        </div>
+        <form id="discipline-form" class="modal-form">
+          <div class="form-group">
+            <label for="modal-discipline-student">Student: <span class="required">*</span></label>
+            <select id="modal-discipline-student" name="student_id" class="form-control" required>
+              <option value="">--Select Student--</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="modal-discipline-type">Incident Type: <span class="required">*</span></label>
+            <select id="modal-discipline-type" name="incident_type" class="form-control" required>
+              <option value="">--Select Type--</option>
+              <option value="truancy">Truancy</option>
+              <option value="lateness">Lateness</option>
+              <option value="poor_conduct">Poor Conduct</option>
+              <option value="disrespect">Disrespect to Teacher</option>
+              <option value="fighting">Fighting</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="modal-discipline-description">Description:</label>
+            <textarea id="modal-discipline-description" name="description" class="form-control" rows="4" placeholder="Describe the incident..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-success">Record Incident</button>
+            <button type="button" class="btn-secondary" onclick="window.closeModal('discipline-modal')">Cancel</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <small>© 2026 Phalombe SRMS</small>
-  </footer>
+  <!-- Notification Container -->
+  <div id="notification-container"></div>
 
   <script type="module" src="../assets/js/teacher/teacher.js"></script>
 </body>

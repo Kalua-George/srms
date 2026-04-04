@@ -166,6 +166,53 @@ class HODController extends BaseController
     }
 
     // =========================
+    // GET /app/hod/classes
+    // HOD only (all classes for assignment options)
+    // =========================
+    public function classes(): void
+    {
+        $this->requireRole(['hod']);
+
+        $pdo = $this->pdo();
+        $stmt = $pdo->query(
+            "SELECT id, name, form_id
+             FROM classes
+             ORDER BY form_id ASC, name ASC"
+        );
+
+        $this->json(['ok' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    }
+
+    // =========================
+    // GET /app/hod/department-subjects
+    // HOD only (subjects in HOD department)
+    // =========================
+    public function departmentSubjects(): void
+    {
+        $this->requireRole(['hod']);
+
+        $pdo = $this->pdo();
+        $deptId = $this->hodDepartmentId($this->userId());
+        if (!$deptId) {
+            $this->json(['ok' => true, 'data' => []]);
+        }
+
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT id, name
+                 FROM subjects
+                 WHERE department_id = :dept
+                 ORDER BY name ASC"
+            );
+            $stmt->execute([':dept' => $deptId]);
+            $this->json(['ok' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        } catch (PDOException $e) {
+            error_log('HOD departmentSubjects Error: ' . $e->getMessage());
+            $this->json(['ok' => false, 'error' => 'Failed to load department subjects'], 500);
+        }
+    }
+
+    // =========================
     // POST /api/hod/assign-class
     // HOD only (teacher must be in HOD department)
     // Creates a pending request; head_teacher approval is required.
@@ -236,6 +283,59 @@ class HODController extends BaseController
     }
 
     // =========================
+    // POST /app/hod/assign-both
+    // HOD only (teacher must be in HOD department)
+    // Creates pending class and subject requests in one submission.
+    // body: teacher_id, class_id, subject_id
+    // =========================
+    public function assignBoth(): void
+    {
+        $this->requireRole(['hod']);
+
+        $data = $this->request();
+        $teacherId = (int)($data['teacher_id'] ?? 0);
+        $classId = (int)($data['class_id'] ?? 0);
+        $subjectId = (int)($data['subject_id'] ?? 0);
+
+        if ($teacherId <= 0 || $classId <= 0 || $subjectId <= 0) {
+            $this->json(['ok' => false, 'error' => 'teacher_id, class_id and subject_id are required'], 400);
+        }
+
+        $this->ensureTeacherInMyDepartment($teacherId);
+
+        $pdo = $this->pdo();
+
+        $classExists = $pdo->prepare("SELECT 1 FROM classes WHERE id = :id LIMIT 1");
+        $classExists->execute([':id' => $classId]);
+        if (!$classExists->fetchColumn()) {
+            $this->json(['ok' => false, 'error' => 'class_id does not exist'], 400);
+        }
+
+        $subjectExists = $pdo->prepare("SELECT 1 FROM subjects WHERE id = :id LIMIT 1");
+        $subjectExists->execute([':id' => $subjectId]);
+        if (!$subjectExists->fetchColumn()) {
+            $this->json(['ok' => false, 'error' => 'subject_id does not exist'], 400);
+        }
+
+        $classRequestId = $this->createAssignmentRequest($teacherId, 'class', $classId);
+        if (!$classRequestId) {
+            $this->json(['ok' => false, 'error' => 'Failed to create class assignment request'], 500);
+        }
+
+        $subjectRequestId = $this->createAssignmentRequest($teacherId, 'subject', $subjectId);
+        if (!$subjectRequestId) {
+            $this->json(['ok' => false, 'error' => 'Failed to create subject assignment request'], 500);
+        }
+
+        $this->json([
+            'ok' => true,
+            'class_request_id' => $classRequestId,
+            'subject_request_id' => $subjectRequestId,
+            'status' => 'pending_approval'
+        ]);
+    }
+
+    // =========================
     // GET /app/hod/assignment-requests
     // HOD only (requests created by this HOD)
     // =========================
@@ -284,7 +384,7 @@ class HODController extends BaseController
         $m = new Teacher($this->userId(), $this->yearId(), $this->termId());
         $m->id = $teacherId;
 
-        $data = json_decode($m->getClasses(), true);
+        $data = $m->getClasses();
         $this->json(['ok' => true, 'data' => $data ?? []]);
     }
 
@@ -310,7 +410,7 @@ class HODController extends BaseController
         $m = new Teacher($this->userId(), $this->yearId(), $this->termId());
         $m->id = $teacherId;
 
-        $data = json_decode($m->getSubjects(), true);
+        $data = $m->getSubjects();
         $this->json(['ok' => true, 'data' => $data ?? []]);
     }
 }

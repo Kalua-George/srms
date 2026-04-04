@@ -2,11 +2,18 @@
 // config/database.php
 
 class Database {
-    private $host = "localhost";       // Database host
-    private $db_name = "school_data";  // Database name
-    private $username = "root";        // DB username
-    private $password = "";            // DB password
+    private $host;       // Database host
+    private $db_name;    // Database name
+    private $username;   // DB username
+    private $password;   // DB password
     public $conn;
+
+    public function __construct() {
+        $this->host = getenv('DB_HOST') ?: "localhost";
+        $this->db_name = getenv('DB_NAME') ?: "school_data";
+        $this->username = getenv('DB_USERNAME') ?: (getenv('DB_USER') ?: "root");
+        $this->password = getenv('DB_PASSWORD') ?: (getenv('DB_PASS') ?: "");
+    }
 
     // Get the PDO database connection
     public function getConnection() {

@@ -308,68 +308,6 @@ class HeadTeacherController extends BaseController
     }
 
     // =========================
-    // CLASSES + FORMS
-    // (head_teacher only)
-    // =========================
-
-    // GET /api/head/forms
-    public function forms(): void
-    {
-        $this->requireRole(['head_teacher']);
-
-        $pdo = $this->pdo();
-        $stmt = $pdo->query("SELECT id, name FROM forms ORDER BY id ASC");
-        $this->json(['ok' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
-    }
-
-    // GET /api/head/classes
-    public function classes(): void
-    {
-        $this->requireRole(['head_teacher']);
-
-        $pdo = $this->pdo();
-        $stmt = $pdo->query("
-            SELECT c.*, f.name AS form_name
-            FROM classes c
-            JOIN forms f ON f.id = c.form_id
-            ORDER BY c.form_id ASC, c.name ASC
-        ");
-        $this->json(['ok' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
-    }
-
-    // POST /api/head/classes/create  body: name, form_id
-    public function createClass(): void
-    {
-        $this->requireRole(['head_teacher']);
-
-        $data = $this->request();
-        $name   = trim((string)($data['name'] ?? ''));
-        $formId = (int)($data['form_id'] ?? 0);
-
-        if ($name === '' || $formId <= 0) {
-            $this->json(['ok' => false, 'error' => 'name and form_id are required'], 400);
-        }
-
-        $pdo = $this->pdo();
-        $stmt = $pdo->prepare("
-            INSERT INTO classes (academic_year_id, term_id, name, form_id)
-            VALUES (:year, :term, :name, :form)
-        ");
-        $ok = $stmt->execute([
-            ':year' => $this->yearId(),
-            ':term' => $this->termId(),
-            ':name' => $name,
-            ':form' => $formId
-        ]);
-
-        if ($ok) {
-            $this->json(['ok' => true, 'id' => (int)$pdo->lastInsertId()]);
-        }
-
-        $this->json(['ok' => false, 'error' => 'Failed to create class'], 500);
-    }
-
-    // =========================
     // EXAMS
     // (head_teacher only)
     // =========================
@@ -422,7 +360,7 @@ class HeadTeacherController extends BaseController
 
         if (!is_array($subjectIds)) $subjectIds = [];
 
-        $m = new exam($this->userId(), $this->yearId(), $this->termId());
+        $m = new Exam($this->userId(), $this->yearId(), $this->termId());
         $m->name = $name;
         $m->exam_type = $type;
         $m->start_date = $startDate;
@@ -443,7 +381,7 @@ class HeadTeacherController extends BaseController
         $examId = (int)($_GET['exam_id'] ?? 0);
         if ($examId <= 0) $this->json(['ok' => false, 'error' => 'Invalid exam_id'], 400);
 
-        $m = new exam($this->userId(), $this->yearId(), $this->termId());
+        $m = new Exam($this->userId(), $this->yearId(), $this->termId());
         $m->id = $examId;
 
         $this->json(['ok' => true, 'data' => $m->getSubjects()]);

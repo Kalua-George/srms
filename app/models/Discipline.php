@@ -2,53 +2,43 @@
 require_once __DIR__ . '/BaseModel.php';
 
 class Discipline extends BaseModel {
-    private $table = 'discipline_cases';
+    private $table = 'disciplinary_records';
 
     public $id;
     public $student_id;
-    public $teacher_id;     // person reporting/logging the case
-    public $case_type;      // e.g. "Late to class"
+    public $type_id;
+    public $action_id;
+    public $reported_by;
+    public $incident_date;
     public $description;
-    public $action_taken;   // e.g. "Warning"
-    public $severity;       // Low, Medium, High
+    public $follow_up;
 
     public function __construct($user_id = null, $academic_year_id = null, $term_id = null) {
         parent::__construct($user_id, $academic_year_id, $term_id);
     }
 
     private function validate() {
-        if (empty($this->student_id) || empty($this->teacher_id) || empty($this->case_type) || empty($this->severity)) {
-            throw new Exception("student_id, teacher_id, case_type, and severity are required.");
-        }
-
-        $allowedSeverity = ['Low', 'Medium', 'High'];
-        if (!in_array($this->severity, $allowedSeverity, true)) {
-            throw new Exception("Invalid severity. Allowed: Low, Medium, High.");
-        }
-
-        if (empty($this->academic_year_id) || empty($this->term_id)) {
-            throw new Exception("academic_year_id and term_id are required.");
+        if (empty($this->student_id) || empty($this->type_id) || empty($this->reported_by) || empty($this->incident_date)) {
+            throw new Exception("student_id, type_id, reported_by, and incident_date are required.");
         }
     }
 
-    // Create a new discipline case
     public function create() {
         try {
             $this->validate();
 
             $query = "INSERT INTO {$this->table}
-                      (student_id, teacher_id, case_type, description, action_taken, severity, academic_year_id, term_id)
+                      (student_id, type_id, action_id, reported_by, incident_date, description, follow_up)
                       VALUES
-                      (:student_id, :teacher_id, :case_type, :description, :action_taken, :severity, :academic_year_id, :term_id)";
+                      (:student_id, :type_id, :action_id, :reported_by, :incident_date, :description, :follow_up)";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':student_id', $this->student_id, PDO::PARAM_INT);
-            $stmt->bindParam(':teacher_id', $this->teacher_id, PDO::PARAM_INT);
-            $stmt->bindParam(':case_type', $this->case_type);
+            $stmt->bindParam(':type_id', $this->type_id, PDO::PARAM_INT);
+            $stmt->bindParam(':action_id', $this->action_id);
+            $stmt->bindParam(':reported_by', $this->reported_by, PDO::PARAM_INT);
+            $stmt->bindParam(':incident_date', $this->incident_date);
             $stmt->bindParam(':description', $this->description);
-            $stmt->bindParam(':action_taken', $this->action_taken);
-            $stmt->bindParam(':severity', $this->severity);
-            $stmt->bindParam(':academic_year_id', $this->academic_year_id, PDO::PARAM_INT);
-            $stmt->bindParam(':term_id', $this->term_id, PDO::PARAM_INT);
+            $stmt->bindParam(':follow_up', $this->follow_up);
 
             if ($stmt->execute()) {
                 $this->id = (int)$this->conn->lastInsertId();
@@ -66,31 +56,28 @@ class Discipline extends BaseModel {
         }
     }
 
-    // Update a discipline case
     public function update() {
         try {
             if (empty($this->id)) throw new Exception("Discipline case id is required for update.");
             $this->validate();
 
             $query = "UPDATE {$this->table} SET
-                        case_type = :case_type,
-                        description = :description,
-                        action_taken = :action_taken,
-                        severity = :severity,
                         student_id = :student_id,
-                        teacher_id = :teacher_id,
-                        academic_year_id = :academic_year_id,
-                        term_id = :term_id
+                        type_id = :type_id,
+                        action_id = :action_id,
+                        reported_by = :reported_by,
+                        incident_date = :incident_date,
+                        description = :description,
+                        follow_up = :follow_up
                       WHERE id = :id";
             $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':case_type', $this->case_type);
-            $stmt->bindParam(':description', $this->description);
-            $stmt->bindParam(':action_taken', $this->action_taken);
-            $stmt->bindParam(':severity', $this->severity);
             $stmt->bindParam(':student_id', $this->student_id, PDO::PARAM_INT);
-            $stmt->bindParam(':teacher_id', $this->teacher_id, PDO::PARAM_INT);
-            $stmt->bindParam(':academic_year_id', $this->academic_year_id, PDO::PARAM_INT);
-            $stmt->bindParam(':term_id', $this->term_id, PDO::PARAM_INT);
+            $stmt->bindParam(':type_id', $this->type_id, PDO::PARAM_INT);
+            $stmt->bindParam(':action_id', $this->action_id);
+            $stmt->bindParam(':reported_by', $this->reported_by, PDO::PARAM_INT);
+            $stmt->bindParam(':incident_date', $this->incident_date);
+            $stmt->bindParam(':description', $this->description);
+            $stmt->bindParam(':follow_up', $this->follow_up);
             $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
             if ($stmt->execute()) {
@@ -108,7 +95,6 @@ class Discipline extends BaseModel {
         }
     }
 
-    // Delete a discipline record
     public function delete() {
         try {
             if (empty($this->id)) throw new Exception("Discipline case id is required for delete.");
@@ -132,15 +118,21 @@ class Discipline extends BaseModel {
         }
     }
 
-    // Get one discipline record by id
     public function getById($id) {
         try {
-            $query = "SELECT dc.*, st.fname, st.lname,
-                             t.firstname AS teacher_fname, t.lastname AS teacher_lname
-                      FROM {$this->table} dc
-                      JOIN students st ON dc.student_id = st.id
-                      JOIN teachers t ON dc.teacher_id = t.id
-                      WHERE dc.id = :id
+            $query = "SELECT dr.*,
+                             dt.name AS type_name,
+                             da.action_name,
+                             st.fname,
+                             st.lname,
+                             t.firstname AS reporter_fname,
+                             t.lastname AS reporter_lname
+                      FROM {$this->table} dr
+                      JOIN students st ON dr.student_id = st.id
+                      JOIN disciplinary_types dt ON dr.type_id = dt.id
+                      LEFT JOIN disciplinary_actions da ON dr.action_id = da.id
+                      JOIN teachers t ON dr.reported_by = t.id
+                      WHERE dr.id = :id
                       LIMIT 1";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
@@ -152,52 +144,27 @@ class Discipline extends BaseModel {
         }
     }
 
-    // Get all discipline cases for a student (optionally filtered by current year+term)
-    public function getByStudent($student_id, $filterByTermYear = true) {
+    public function getByStudent($student_id) {
         try {
-            $query = "SELECT dc.*, t.firstname AS teacher_fname, t.lastname AS teacher_lname
-                      FROM {$this->table} dc
-                      JOIN teachers t ON dc.teacher_id = t.id
-                      WHERE dc.student_id = :student_id";
-
-            if ($filterByTermYear) {
-                $query .= " AND dc.academic_year_id = :academic_year_id AND dc.term_id = :term_id";
-            }
-
-            $query .= " ORDER BY dc.id DESC";
+            $query = "SELECT dr.*,
+                             dt.name AS type_name,
+                             da.action_name,
+                             t.firstname AS reporter_fname,
+                             t.lastname AS reporter_lname
+                      FROM {$this->table} dr
+                      JOIN disciplinary_types dt ON dr.type_id = dt.id
+                      LEFT JOIN disciplinary_actions da ON dr.action_id = da.id
+                      JOIN teachers t ON dr.reported_by = t.id
+                      WHERE dr.student_id = :student_id
+                      ORDER BY dr.incident_date DESC, dr.id DESC";
 
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':student_id', $student_id, PDO::PARAM_INT);
-
-            if ($filterByTermYear) {
-                $stmt->bindParam(':academic_year_id', $this->academic_year_id, PDO::PARAM_INT);
-                $stmt->bindParam(':term_id', $this->term_id, PDO::PARAM_INT);
-            }
-
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         } catch (PDOException $e) {
             error_log("Discipline getByStudent() Error: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    // Get all discipline cases for a given year + term (admin/reporting)
-    public function getByTerm($academic_year_id, $term_id) {
-        try {
-            $query = "SELECT dc.*, st.fname, st.lname
-                      FROM {$this->table} dc
-                      JOIN students st ON dc.student_id = st.id
-                      WHERE dc.academic_year_id = :year AND dc.term_id = :term
-                      ORDER BY dc.id DESC";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':year', $academic_year_id, PDO::PARAM_INT);
-            $stmt->bindParam(':term', $term_id, PDO::PARAM_INT);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Discipline getByTerm() Error: " . $e->getMessage());
             return [];
         }
     }

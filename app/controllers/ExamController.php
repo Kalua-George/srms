@@ -20,14 +20,14 @@ class ExamController extends BaseController
     }
 
     // =========================================================
-    // GET /api/exams/show?id=1
+    // GET /api/exams/show?id=1 or /api/exams/show?exam_id=1
     // all authenticated roles can view an exam
     // =========================================================
     public function show(): void
     {
         $this->requireAuth();
 
-        $id = (int)($_GET['id'] ?? 0);
+        $id = (int)($_GET['id'] ?? ($_GET['exam_id'] ?? 0));
         if ($id <= 0) $this->json(['ok' => false, 'error' => 'Invalid id'], 400);
 
         $m = new Exam($this->userId(), $this->yearId(), $this->termId());
@@ -39,14 +39,14 @@ class ExamController extends BaseController
     }
 
     // =========================================================
-    // GET /api/exams/subjects?exam_id=1
+    // GET /api/exams/subjects?exam_id=1 or /api/exams/subjects?id=1
     // all authenticated roles can view exam subjects
     // =========================================================
     public function subjects(): void
     {
         $this->requireAuth();
 
-        $examId = (int)($_GET['exam_id'] ?? 0);
+        $examId = (int)($_GET['exam_id'] ?? ($_GET['id'] ?? 0));
         if ($examId <= 0) $this->json(['ok' => false, 'error' => 'Invalid exam_id'], 400);
 
         $m = new Exam($this->userId(), $this->yearId(), $this->termId());
