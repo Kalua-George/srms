@@ -243,8 +243,8 @@ async function loadClasses() {
       <tr>
         <td>${escapeHtml(c.name || `Class ${c.id}`)}</td>
         <td>${escapeHtml(c.form_name || "-")}</td>
-        <td>${escapeHtml(c.academic_year_id || "-")}</td>
-        <td>${escapeHtml(c.term_id || "-")}</td>
+        <td>${escapeHtml(c.academic_year_name || c.academic_year_id || "-")}</td>
+        <td>${escapeHtml(c.term_name || c.term_id || "-")}</td>
       </tr>
     `
       )

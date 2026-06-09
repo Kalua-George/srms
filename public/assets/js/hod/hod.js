@@ -1,5 +1,6 @@
 import { createBaseDashboard } from "../basedashboard.js";
 import { apiCall, showNotification } from "../formHelpers.js";
+import { setupSubjectStudentsModal } from "../modals.js";
 
 let hodState = {
   me: null,
@@ -210,6 +211,14 @@ async function loadMyClasses() {
   try {
     const res = await apiCall("GET", `/app/hod/teacher-classes?teacher_id=${me.id}`);
     const rows = res?.data || [];
+    const studentsRes = await apiCall("GET", "/app/students");
+    const students = studentsRes?.data || [];
+    const studentCountByClass = students.reduce((acc, student) => {
+      const key = Number(student.class_id || 0);
+      if (!key) return acc;
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
 
     if (!rows.length) {
       tbody.innerHTML = "";
@@ -223,11 +232,24 @@ async function loadMyClasses() {
         (r) => `
       <tr>
         <td>${escapeHtml(r.name || `Class ${r.id}`)}</td>
-        <td>${escapeHtml(r.form_id || "-")}</td>
+        <td>${escapeHtml(r.form_name || r.form_id || "-")}</td>
+        <td>${escapeHtml(r.subject_name || r.subject || "-")}</td>
+        <td>${Number(studentCountByClass[Number(r.id)] || 0)}</td>
+        <td><button type="button" class="btn-primary btn-sm subject-students-btn" data-class-id="${Number(r.id)}" data-class-name="${encodeURIComponent(r.name || `Class ${r.id}`)}" data-subject-name="${encodeURIComponent(r.subject_name || r.subject || "Subject")}">View Students</button></td>
       </tr>
     `
       )
       .join("");
+
+    tbody.querySelectorAll(".subject-students-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        window.showSubjectStudentsModal(
+          button.dataset.classId,
+          decodeURIComponent(button.dataset.className || ""),
+          decodeURIComponent(button.dataset.subjectName || "")
+        );
+      });
+    });
   } catch (error) {
     showNotification(`Failed to load personal classes: ${error.message}`, "error");
   }
@@ -639,6 +661,7 @@ const dashboard = createBaseDashboard({
   onReady: async (me) => {
     setupMobileSidebar();
     hodState.me = me?.user || null;
+    setupSubjectStudentsModal();
 
     const dateInput = document.getElementById("attendance-date-select");
     if (dateInput) dateInput.valueAsDate = new Date();

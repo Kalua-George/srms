@@ -102,6 +102,28 @@ class HODController extends BaseController
             $this->ensureAssignmentRequestSchema();
             $pdo = $this->pdo();
 
+            $conflict = $pdo->prepare(
+                "SELECT id, teacher_id, status
+                 FROM teacher_assignment_requests
+                 WHERE assignment_type = 'both'
+                   AND class_id = :class_id
+                   AND subject_id = :subject_id
+                   AND status IN ('pending', 'approved')
+                 ORDER BY FIELD(status, 'approved', 'pending') ASC, id DESC
+                 LIMIT 1"
+            );
+            $conflict->execute([
+                ':class_id' => $classId,
+                ':subject_id' => $subjectId,
+            ]);
+            $conflictRow = $conflict->fetch(PDO::FETCH_ASSOC);
+            if ($conflictRow) {
+                $ownerTeacherId = (int)($conflictRow['teacher_id'] ?? 0);
+                if ($ownerTeacherId !== $teacherId) {
+                    return null;
+                }
+            }
+
             $check = $pdo->prepare(
                 "SELECT id
                  FROM teacher_assignment_requests
@@ -109,7 +131,7 @@ class HODController extends BaseController
                    AND assignment_type = 'both'
                    AND class_id = :class_id
                    AND subject_id = :subject_id
-                   AND status = 'pending'
+                   AND status IN ('pending', 'approved')
                  LIMIT 1"
             );
             $check->execute([
@@ -396,9 +418,28 @@ class HODController extends BaseController
             $this->json(['ok' => false, 'error' => 'subject_id does not exist'], 400);
         }
 
+        $conflictCheck = $pdo->prepare(
+            "SELECT id, teacher_id, status
+             FROM teacher_assignment_requests
+             WHERE assignment_type = 'both'
+               AND class_id = :class_id
+               AND subject_id = :subject_id
+               AND status IN ('pending', 'approved')
+             ORDER BY FIELD(status, 'approved', 'pending') ASC, id DESC
+             LIMIT 1"
+        );
+        $conflictCheck->execute([
+            ':class_id' => $classId,
+            ':subject_id' => $subjectId,
+        ]);
+        $conflictRow = $conflictCheck->fetch(PDO::FETCH_ASSOC);
+        if ($conflictRow && (int)$conflictRow['teacher_id'] !== $teacherId) {
+            $this->json(['ok' => false, 'error' => 'This subject is already allocated to another teacher for that class'], 409);
+        }
+
         $requestId = $this->createCombinedAssignmentRequest($teacherId, $classId, $subjectId);
         if (!$requestId) {
-            $this->json(['ok' => false, 'error' => 'Failed to create combined assignment request'], 500);
+            $this->json(['ok' => false, 'error' => 'This subject is already allocated for that class'], 409);
         }
 
         $this->json([
@@ -465,7 +506,7 @@ class HODController extends BaseController
         $m = new Teacher($this->userId(), $this->yearId(), $this->termId());
         $m->id = $teacherId;
 
-        $data = $m->getClasses();
+        $data = $m->getTeachingAssignments();
         $this->json(['ok' => true, 'data' => $data ?? []]);
     }
 

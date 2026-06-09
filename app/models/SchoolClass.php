@@ -30,9 +30,13 @@ class SchoolClass extends BaseModel
     {
         try {
             $stmt = $this->conn->prepare(
-                "SELECT c.*, f.name AS form_name
+                "SELECT c.*, f.name AS form_name,
+                        ay.year_name AS academic_year_name,
+                        tm.term_name AS term_name
                  FROM {$this->table} c
                  JOIN forms f ON f.id = c.form_id
+                 LEFT JOIN academic_years ay ON ay.id = c.academic_year_id
+                 LEFT JOIN terms tm ON tm.id = c.term_id
                  ORDER BY c.form_id ASC, c.name ASC"
             );
             $stmt->execute();

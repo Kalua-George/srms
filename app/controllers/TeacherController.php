@@ -214,9 +214,9 @@ class TeacherController extends BaseController
         $m = new Teacher($this->userId(), $this->yearId(), $this->termId());
         $m->id = $teacherId;
 
-        // model returns JSON string
-        $data = json_decode($m->getClasses(), true);
-        $this->json(['ok' => true, 'data' => $data ?? []]);
+        $withSubject = in_array(strtolower((string)($_GET['with_subject'] ?? '0')), ['1', 'true', 'yes'], true);
+        $data = $withSubject ? $m->getTeachingAssignments() : $m->getClasses();
+        $this->json(['ok' => true, 'data' => is_array($data) ? $data : []]);
     }
 
     // =========================
@@ -250,8 +250,8 @@ class TeacherController extends BaseController
         $m = new Teacher($this->userId(), $this->yearId(), $this->termId());
         $m->id = $teacherId;
 
-        $data = json_decode($m->getSubjects(), true);
-        $this->json(['ok' => true, 'data' => $data ?? []]);
+        $data = $m->getSubjects();
+        $this->json(['ok' => true, 'data' => is_array($data) ? $data : []]);
     }
 
     // =========================

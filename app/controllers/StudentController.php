@@ -214,6 +214,105 @@ class StudentController extends BaseController
     }
 
     // ---------------------------------------------------------
+    // POST /app/students/assign-class
+    // Head Teacher only
+    // body: class_id + (student_id OR student_ids[])
+    // ---------------------------------------------------------
+    public function assignClass(): void
+    {
+        $this->requireRole(['head_teacher']);
+
+        $data = $this->request();
+        $classId = (int)($data['class_id'] ?? 0);
+
+        if ($classId <= 0) {
+            $this->json(['ok' => false, 'error' => 'class_id is required'], 400);
+        }
+
+        $studentIds = [];
+        $singleStudentId = (int)($data['student_id'] ?? 0);
+        if ($singleStudentId > 0) {
+            $studentIds[] = $singleStudentId;
+        }
+
+        if (isset($data['student_ids']) && is_array($data['student_ids'])) {
+            foreach ($data['student_ids'] as $sid) {
+                $sidInt = (int)$sid;
+                if ($sidInt > 0) $studentIds[] = $sidInt;
+            }
+        }
+
+        $studentIds = array_values(array_unique($studentIds));
+        if (count($studentIds) === 0) {
+            $this->json(['ok' => false, 'error' => 'student_id or student_ids[] is required'], 400);
+        }
+
+        $pdo = $this->pdo();
+
+        $classStmt = $pdo->prepare("SELECT id, form_id FROM classes WHERE id = :id LIMIT 1");
+        $classStmt->execute([':id' => $classId]);
+        $classRow = $classStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$classRow) {
+            $this->json(['ok' => false, 'error' => 'class_id does not exist'], 400);
+        }
+
+        $formId = (int)($classRow['form_id'] ?? 0);
+        if ($formId <= 0) {
+            $this->json(['ok' => false, 'error' => 'Selected class has no valid form_id'], 400);
+        }
+
+        $updateStmt = $pdo->prepare(
+            "UPDATE students
+             SET class_id = :class_id,
+                 form_id = :form_id,
+                 academic_year_id = :academic_year_id,
+                 term_id = :term_id
+             WHERE id = :student_id"
+        );
+
+        $updated = 0;
+        $missing = [];
+
+        try {
+            $pdo->beginTransaction();
+
+            foreach ($studentIds as $studentId) {
+                $existsStmt = $pdo->prepare("SELECT 1 FROM students WHERE id = :id LIMIT 1");
+                $existsStmt->execute([':id' => $studentId]);
+                if (!$existsStmt->fetchColumn()) {
+                    $missing[] = $studentId;
+                    continue;
+                }
+
+                $updateStmt->execute([
+                    ':class_id' => $classId,
+                    ':form_id' => $formId,
+                    ':academic_year_id' => $this->yearId(),
+                    ':term_id' => $this->termId(),
+                    ':student_id' => $studentId,
+                ]);
+                $updated++;
+            }
+
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $this->json(['ok' => false, 'error' => 'Failed to assign students to class'], 500);
+        }
+
+        $this->json([
+            'ok' => true,
+            'data' => [
+                'class_id' => $classId,
+                'form_id' => $formId,
+                'updated_count' => $updated,
+                'missing_student_ids' => $missing,
+            ],
+        ]);
+    }
+
+    // ---------------------------------------------------------
     // GET /api/students/attendance?id=1
     // head_teacher: any
     // hod: dept scope

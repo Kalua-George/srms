@@ -10,6 +10,7 @@ import {
   setupAttendanceModal,
   setupGradeEntryModal,
   setupDisciplineModal,
+  setupSubjectStudentsModal,
 } from "../modals.js";
 
 /**
@@ -121,13 +122,12 @@ function setupPanelSwitching() {
  */
 async function loadDashboardStats() {
   try {
-    const response = await apiCall("GET", "/app/students");
-    const students = response.data || [];
+    const response = await apiCall("GET", "/app/teacher/dashboard");
+    const dashboard = response?.data || {};
+    const myClasses = Array.isArray(dashboard.my_classes) ? dashboard.my_classes : [];
 
-    // Count unique classes
-    const classes = new Set(students.map((s) => s.class_id));
-    document.getElementById("count-classes").textContent = classes.size;
-    document.getElementById("count-students").textContent = students.length;
+    document.getElementById("count-classes").textContent = myClasses.length;
+    document.getElementById("count-students").textContent = "-";
     document.getElementById("count-tasks").textContent = "0";
   } catch (error) {
     showNotification(
@@ -152,23 +152,19 @@ async function loadMyClasses() {
     table.style.display = "none";
     noClasses.style.display = "none";
 
-    const response = await apiCall("GET", "/app/students");
-    const students = response.data || [];
+    const [classesResponse, studentsResponse] = await Promise.all([
+      apiCall("GET", "/app/teacher/classes?with_subject=1"),
+      apiCall("GET", "/app/students"),
+    ]);
 
-    // Group by class
-    const classesById = {};
-    students.forEach((student) => {
-      if (!classesById[student.class_id]) {
-        classesById[student.class_id] = {
-          id: student.class_id,
-          name: student.class_name || `Class ${student.class_id}`,
-          students: [],
-        };
-      }
-      classesById[student.class_id].students.push(student);
-    });
-
-    const classes = Object.values(classesById);
+    const classes = classesResponse?.data || [];
+    const students = studentsResponse?.data || [];
+    const studentCountByClass = students.reduce((acc, student) => {
+      const key = Number(student.class_id || 0);
+      if (!key) return acc;
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
 
     if (classes.length === 0) {
       noClasses.style.display = "block";
@@ -178,14 +174,31 @@ async function loadMyClasses() {
 
     tbody.innerHTML = "";
     classes.forEach((cls) => {
+      const classId = Number(cls.id || cls.class_id || 0);
+      const className = cls.name || cls.class_name || `Class ${classId}`;
+      const formName = cls.form_name || cls.form_id || "N/A";
+      const subjectName = cls.subject_name || cls.subject || "N/A";
+      const studentCount = studentCountByClass[classId] || 0;
+
       const row = document.createElement("tr");
       row.innerHTML = `
-        <td><strong>${cls.name}</strong></td>
-        <td>${cls.students.length}</td>
-        <td>${cls.students[0]?.form_name || "N/A"}</td>
-        <td><button class="btn-sm btn-secondary">View Roster</button></td>
+        <td><strong>${className}</strong></td>
+        <td>${formName}</td>
+        <td>${subjectName}</td>
+        <td>${studentCount}</td>
+        <td><button type="button" class="btn-sm btn-secondary subject-students-btn" data-class-id="${classId}" data-class-name="${encodeURIComponent(className)}" data-subject-name="${encodeURIComponent(subjectName)}">View Students</button></td>
       `;
       tbody.appendChild(row);
+    });
+
+    tbody.querySelectorAll(".subject-students-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        window.showSubjectStudentsModal(
+          button.dataset.classId,
+          decodeURIComponent(button.dataset.className || ""),
+          decodeURIComponent(button.dataset.subjectName || "")
+        );
+      });
     });
 
     table.style.display = "table";
@@ -263,15 +276,15 @@ async function loadAttendanceSection() {
   const classSelect = document.getElementById("attendance-class-select");
   await populateSelect(
     "attendance-class-select",
-    "/app/students",
-    "class_name",
-    "class_id"
+    "/app/teacher/classes",
+    "name",
+    "id"
   );
   await populateSelect(
     "modal-attendance-class",
-    "/app/students",
-    "class_name",
-    "class_id"
+    "/app/teacher/classes",
+    "name",
+    "id"
   );
 
   // Load from filter form
@@ -374,7 +387,7 @@ async function submitInlineAttendance() {
  * Load Exam Center Section
  */
 async function loadExamCenter() {
-  await populateSelect("exam-class-select", "/app/students", "class_name", "class_id");
+  await populateSelect("exam-class-select", "/app/teacher/classes", "name", "id");
   await populateSelect("modal-grade-exam", "/app/exams", "title", "id");
 
   document.getElementById("exams-filter-form")?.addEventListener("submit", async (e) => {
@@ -530,6 +543,7 @@ const dashboard = createBaseDashboard({
     setupAttendanceModal(() => loadDisciplineRecords());
     setupGradeEntryModal(() => loadStudentGrades());
     setupDisciplineModal(() => loadDisciplineRecords());
+    setupSubjectStudentsModal();
 
     // Load initial dashboard data
     await loadDashboardStats();

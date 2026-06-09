@@ -28,6 +28,11 @@ $ROUTES = [
         '/app/students/attendance' => [StudentController::class, 'attendance'],
         '/app/students/grades' => [StudentController::class, 'grades'],
 
+        //------teacher-------
+        '/app/teacher/dashboard' => [TeacherController::class, 'dashboard'],
+        '/app/teacher/classes' => [TeacherController::class, 'classes'],
+        '/app/teacher/subjects' => [TeacherController::class, 'subjects'],
+
         // ---- HOD ----
         '/app/hod/dashboard' => [HODController::class, 'dashboard'],
         '/app/hod/teachers' => [HODController::class, 'teachers'],
@@ -80,6 +85,7 @@ $ROUTES = [
         '/app/students/create' => [StudentController::class, 'create'],
         '/app/students/update' => [StudentController::class, 'update'],
         '/app/students/delete' => [StudentController::class, 'delete'],
+        '/app/students/assign-class' => [StudentController::class, 'assignClass'],
 
         // ---- HOD Assignments ----
         '/app/hod/assign-class' => [HODController::class, 'assignClass'],

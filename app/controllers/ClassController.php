@@ -12,7 +12,7 @@ class ClassController extends BaseController
     // GET /app/head/forms
     public function forms(): void
     {
-        $this->requireRole(['head_teacher']);
+        $this->requireRole(['head_teacher', 'hod' , 'teacher']);
 
         $m = $this->model();
         $this->json(['ok' => true, 'data' => $m->listForms()]);

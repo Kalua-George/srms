@@ -57,18 +57,36 @@ class HeadTeacherController extends BaseController
         $m = new Teacher($this->userId(), $this->yearId(), $this->termId());
         $m->id = $teacherId;
 
-        if ($type === 'class') return $m->assignClass($targetId);
-        if ($type === 'subject') return $m->assignSubject($targetId);
-
         if ($type === 'both') {
             $resolvedClassId = $classId > 0 ? $classId : $targetId;
             if ($resolvedClassId <= 0 || $subjectId <= 0) return false;
+
+            $pdo = $this->pdo();
+            $conflict = $pdo->prepare(
+                "SELECT id, teacher_id
+                 FROM teacher_assignment_requests
+                 WHERE assignment_type = 'both'
+                   AND class_id = :class_id
+                   AND subject_id = :subject_id
+                   AND status = 'approved'
+                   AND teacher_id <> :teacher_id
+                 LIMIT 1"
+            );
+            $conflict->execute([
+                ':class_id' => $resolvedClassId,
+                ':subject_id' => $subjectId,
+                ':teacher_id' => $teacherId,
+            ]);
+            if ($conflict->fetchColumn()) return false;
 
             $okClass = $m->assignClass($resolvedClassId);
             if (!$okClass) return false;
 
             return $m->assignSubject($subjectId);
         }
+
+        if ($type === 'class') return $m->assignClass($targetId);
+        if ($type === 'subject') return $m->assignSubject($targetId);
 
         return false;
     }
@@ -293,6 +311,31 @@ class HeadTeacherController extends BaseController
         $request = $this->loadPendingAssignmentRequest($requestId);
         if (!$request) {
             $this->json(['ok' => false, 'error' => 'Pending request not found'], 404);
+        }
+
+        if ((string)$request['assignment_type'] === 'both') {
+            $classId = (int)($request['class_id'] ?? 0);
+            $subjectId = (int)($request['subject_id'] ?? 0);
+            $teacherId = (int)($request['teacher_id'] ?? 0);
+            $pdo = $this->pdo();
+            $conflict = $pdo->prepare(
+                "SELECT id
+                 FROM teacher_assignment_requests
+                 WHERE assignment_type = 'both'
+                   AND class_id = :class_id
+                   AND subject_id = :subject_id
+                   AND status = 'approved'
+                   AND teacher_id <> :teacher_id
+                 LIMIT 1"
+            );
+            $conflict->execute([
+                ':class_id' => $classId,
+                ':subject_id' => $subjectId,
+                ':teacher_id' => $teacherId,
+            ]);
+            if ($conflict->fetchColumn()) {
+                $this->json(['ok' => false, 'error' => 'This subject is already allocated to another teacher for that class'], 409);
+            }
         }
 
         if (!$this->applyApprovedAssignment($request)) {

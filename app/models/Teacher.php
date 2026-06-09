@@ -172,6 +172,40 @@ class Teacher extends BaseModel {
         }
     }
 
+    // Get subject-aware teaching assignments for dashboard views
+    public function getTeachingAssignments() {
+        try {
+            $stmt = $this->conn->prepare(
+                "SELECT DISTINCT
+                        c.id,
+                        c.name,
+                        c.form_id,
+                        f.name AS form_name,
+                        s.id AS subject_id,
+                        s.name AS subject_name
+                 FROM teacher_assignment_requests r
+                 JOIN classes c ON c.id = COALESCE(r.class_id, CASE WHEN r.assignment_type IN ('class', 'both') THEN r.target_id ELSE NULL END)
+                 LEFT JOIN forms f ON f.id = c.form_id
+                 LEFT JOIN subjects s ON s.id = COALESCE(r.subject_id, CASE WHEN r.assignment_type = 'subject' THEN r.target_id ELSE NULL END)
+                 WHERE r.teacher_id = :teacher_id
+                   AND r.status = 'approved'
+                   AND r.academic_year_id = :academic_year_id
+                   AND r.term_id = :term_id
+                   AND COALESCE(r.class_id, CASE WHEN r.assignment_type IN ('class', 'both') THEN r.target_id ELSE NULL END) IS NOT NULL
+                   AND COALESCE(r.subject_id, CASE WHEN r.assignment_type = 'subject' THEN r.target_id ELSE NULL END) IS NOT NULL
+                 ORDER BY c.form_id ASC, c.name ASC, s.name ASC"
+            );
+            $stmt->bindParam(':teacher_id', $this->id, PDO::PARAM_INT);
+            $stmt->bindParam(':academic_year_id', $this->academic_year_id, PDO::PARAM_INT);
+            $stmt->bindParam(':term_id', $this->term_id, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Teacher GetTeachingAssignments Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
     // Get subjects assigned to teacher
     public function getSubjects() {
         try {

@@ -76,7 +76,7 @@ async function loadStudentsForClass(classId, containerSelector) {
       label.className = "checkbox-label";
       label.innerHTML = `
         <input type="checkbox" name="present_students" value="${student.id}" />
-        <span>${student.firstname} ${student.lastname}</span>
+        <span>${student.firstname} ${student.lastname} <small>(ID: ${student.id})</small></span>
       `;
       container.appendChild(label);
     });
@@ -412,6 +412,78 @@ export function setupDisciplineModal(onSuccess) {
       }
     });
   }
+
+  setupModalBackdropClosing(modalId);
+}
+
+/**
+ * Setup read-only students modal for class/subject listings
+ */
+export function setupSubjectStudentsModal() {
+  const modalId = "subject-students-modal";
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+
+  const title = modal.querySelector("#subject-students-title");
+  const subtitle = modal.querySelector("#subject-students-subtitle");
+  const count = modal.querySelector("#subject-students-count");
+  const list = modal.querySelector("#subject-students-list");
+
+  async function openStudentsModal(classId, className, subjectName) {
+    if (!classId) return;
+
+    if (title) title.textContent = subjectName ? `Students for ${subjectName}` : "Students";
+    if (subtitle) subtitle.textContent = className ? `Class: ${className}` : "Class roster";
+    if (count) count.textContent = "Loading...";
+    if (list) list.innerHTML = '<p class="text-warning">Loading students...</p>';
+
+    showModal(modalId);
+
+    try {
+      const response = await apiCall("GET", `/app/students?class_id=${classId}`);
+      const students = response?.data || [];
+
+      if (count) count.textContent = `${students.length}`;
+
+      if (!list) return;
+
+      if (!students.length) {
+        list.innerHTML = '<p class="text-warning">No students registered for this class.</p>';
+        return;
+      }
+
+      list.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student Code</th>
+              <th>Student Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${students
+              .map((student) => {
+                const first = student.fname || student.firstname || "";
+                const last = student.lname || student.lastname || "";
+                const studentCode = student.student_code || student.code || "-";
+                return `
+                  <tr>
+                    <td>${studentCode}</td>
+                    <td>${first} ${last}</td>
+                  </tr>
+                `;
+              })
+              .join("")}
+          </tbody>
+        </table>
+      `;
+    } catch (error) {
+      if (list) list.innerHTML = `<p class="text-warning">Error loading students: ${error.message}</p>`;
+      if (count) count.textContent = "0";
+    }
+  }
+
+  window.showSubjectStudentsModal = openStudentsModal;
 
   setupModalBackdropClosing(modalId);
 }
