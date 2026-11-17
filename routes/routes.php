@@ -130,8 +130,9 @@ function dispatch(array $ROUTES): void
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $path   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
-    // Your app is accessed as: http://localhost/phalombe_srms/public/...
-    $base = '/phalombe_srms/public';
+
+    // Your app is accessed as: http://localhost/srms/public/...
+    $base = '/srms/public';
     if ($base !== '' && str_starts_with($path, $base)) {
         $path = substr($path, strlen($base));
         if ($path === '') $path = '/';

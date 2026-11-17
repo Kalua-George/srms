@@ -1,8 +1,8 @@
-# Phalombe SRMS - Full Project Documentation
+# SRMS - Full Project Documentation
 
 ## 1. Project Overview
 
-Phalombe SRMS (School Records Management System) is a role-based school management web application built with:
+SRMS (School Records Management System) is a role-based school management web application built with:
 
 - PHP (custom MVC-like structure)
 - MySQL/MariaDB (via PDO)
@@ -30,7 +30,7 @@ The system manages:
 
 ### 2.1 Request Flow
 
-1. Browser requests endpoint under `/phalombe_srms/public`
+1. Browser requests endpoint under `/srms/public`
 2. `public/index.php` starts the session and normalizes the request path
 3. Request is dispatched through `routes/routes.php`
 4. Matching controller method executes business logic
@@ -50,7 +50,7 @@ The system manages:
 ## 3. Directory Structure
 
 ```text
-phalombe_srms/
+srms/
 ├── app/
 │   ├── config/
 │   │   └── database.php
@@ -111,13 +111,13 @@ phalombe_srms/
 The router expects the app under:
 
 ```
-/phalombe_srms/public
+/srms/public
 ```
 
 Typical local URL:
 
 ```
-http://localhost/phalombe_srms/public
+http://localhost/srms/public
 ```
 
 ### 4.3 Database Connection
@@ -136,7 +136,7 @@ Configured in `app/config/database.php`:
 2. Start Apache and MySQL in XAMPP/LAMPP
 3. Create/import database using `public/school_data.sql`
 4. Verify DB credentials in `app/config/database.php`
-5. Open `http://localhost/phalombe_srms/public`
+5. Open `http://localhost/srms/public`
 6. Login with a valid `teacher_code` from `teachers` table
 
 ## 6. Authentication and Session Model

@@ -6,7 +6,7 @@ session_start();
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-$base = '/phalombe_srms/public';
+$base = '/srms/public';
 if (str_starts_with($path, $base)) {
     $path = substr($path, strlen($base));
     if ($path === '') $path = '/';
